@@ -1,0 +1,11 @@
+
+
+* Reading List
+
+1. Theory and practice of constraint handling rules
+2. As Time Goes By: Constraint Handling Rules 
+3. [[https://www.tandfonline.com/doi/pdf/10.1080/088395100117034?needAccess=true][Symbolic constraints for meta-logic programming]]
+4. Parallelism, concurrency and distribution in constraint handling rules: A survey
+5. T. Schrijvers, and B. Demoen, The K.U.Leuven CHR System: Implementation and Application, First Workshop on Constraint Handling Rules: Selected Contributions (Frühwirth, T. and Meister, M., eds.), pp. 1--5, 2004.
+6. [[https://www.eclipseclp.org/doc/tutorial.pdf][Eclipse Prolog Manual]] (check chapters 14 and 15)
+7. Constraint programming languages: their specification and generation (Look for the "Bertrand" language)
