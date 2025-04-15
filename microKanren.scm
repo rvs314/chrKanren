@@ -1,6 +1,10 @@
 (define (var c) (vector c))
 (define (var? x) (vector? x))
-(define (var=? x1 x2) (= (vector-ref x1 0) (vector-ref x2 0)))
+(define (var-idx v) (vector-ref v 0))
+(define (var=? x1 x2) (= (var-idx x1) (var-idx x2)))
+(define (var-min x y) (var (min (var-idx x) (var-idx y))))
+(define (var-max x y) (var (max (var-idx x) (var-idx y))))
+(define (var>=? v1 v2) (>= (var-idx v1) (var-idx v2)))
 
 (define-record-type state
   (fields assoc constraints count))
@@ -43,12 +47,22 @@
   (let ((u (walk u s)) (v (walk v s)))
     (cond
       ((and (var? u) (var? v) (var=? u v)) s)
-      ((var? u) (ext-s u v s))
-      ((var? v) (ext-s v u s))
+      ((and (var? u) (var? v))
+       (let ((mn (var-min u v))
+             (mx (var-max u v)))
+         (values (ext-s mx mn s) `((,mx . ,mn)))))
+      ((var? u) (values (ext-s u v s) `((,u . ,v))))
+      ((var? v) (values (ext-s v u s) `((,v . ,u))))
       ((and (pair? u) (pair? v))
-       (let ((s (unify (car u) (car v) s)))
-         (and s (unify (cdr u) (cdr v) s))))
-      (else (and (eqv? u v) s)))))
+       (let-values (((s added) (unify (car u) (car v) s)))
+         (if s
+             (let-values (((s2 added2) (unify (cdr u) (cdr v) s)))
+               (values s (append added added2)))
+             (values #f #f))))
+      (else
+       (if (eqv? u v)
+           (values s '())
+           (values #f #f))))))
 
 (define (call/fresh f)
   (lambda (st)
