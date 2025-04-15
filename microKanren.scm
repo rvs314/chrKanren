@@ -1,9 +1,18 @@
-;; Jason Hemann and Dan Friedman
-;; microKanren, final implementation from paper
-
 (define (var c) (vector c))
 (define (var? x) (vector? x))
 (define (var=? x1 x2) (= (vector-ref x1 0) (vector-ref x2 0)))
+
+(define-record-type state
+  (fields assoc count))
+
+(define (state-with-assoc state assoc)
+  (make-state assoc (state-count state)))
+
+(define (allocate-variable state)
+  (values (var (state-count state))
+          (make-state (state-assoc state) (+ 1 (state-count state)))))
+
+(define empty-state (make-state '() 0))
 
 (define (walk u s)
   (let ((pr (and (var? u) (assp (lambda (v) (var=? u v)) s))))
@@ -12,11 +21,13 @@
 (define (ext-s x v s) `((,x . ,v) . ,s))
 
 (define (== u v)
-  (lambda (s/c)
-    (let ((s (unify u v (car s/c))))
-      (if s (unit `(,s . ,(cdr s/c))) mzero))))
+  (lambda (st)
+    (let ((s (unify u v (state-assoc st))))
+      (if s
+          (unit (state-with-assoc st s))
+          mzero))))
 
-(define (unit s/c) (cons s/c mzero))
+(define (unit state) (cons state mzero))
 (define mzero '())
 
 (define (unify u v s)
@@ -31,12 +42,12 @@
       (else (and (eqv? u v) s)))))
 
 (define (call/fresh f)
-  (lambda (s/c)
-    (let ((c (cdr s/c)))
-      ((f (var c)) `(,(car s/c) . ,(+ c 1))))))
+  (lambda (st)
+    (let-values (((vr st^) (allocate-variable st)))
+      ((f vr) st^))))
 
-(define (disj g1 g2) (lambda (s/c) (mplus (g1 s/c) (g2 s/c))))
-(define (conj g1 g2) (lambda (s/c) (bind (g1 s/c) g2)))
+(define (disj g1 g2) (lambda (state) (mplus (g1 state) (g2 state))))
+(define (conj g1 g2) (lambda (state) (bind (g1 state) g2)))
 
 (define (mplus $1 $2)
   (cond

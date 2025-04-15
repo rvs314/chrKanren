@@ -37,16 +37,18 @@
     ((_ (x ...) g0 g ...)
      (map reify-1st (take-all (call/goal (fresh (x ...) g0 g ...)))))))
 
-(define empty-state '(() . 0))
-
 (define (call/goal g) (g empty-state))
 
 (define (pull $)
-  (if (procedure? $) (pull ($)) $))
+  (if (procedure? $)
+      (pull ($))
+      $))
 
 (define (take-all $)
   (let (($ (pull $)))
-    (if (null? $) '() (cons (car $) (take-all (cdr $))))))
+    (if (null? $)
+        '()
+        (cons (car $) (take-all (cdr $))))))
 
 (define (take n $)
   (if (zero? n) '()
@@ -54,7 +56,7 @@
       (if (null? $) '() (cons (car $) (take (- n 1) (cdr $)))))))
 
 (define (reify-1st s/c)
-  (let ((v (walk* (var 0) (car s/c))))
+  (let ((v (walk* (var 0) (state-assoc s/c))))
     (walk* v (reify-s v '()))))
 
 (define (walk* v s)
