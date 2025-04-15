@@ -3,16 +3,25 @@
 (define (var=? x1 x2) (= (vector-ref x1 0) (vector-ref x2 0)))
 
 (define-record-type state
-  (fields assoc count))
+  (fields assoc constraints count))
 
 (define (state-with-assoc state assoc)
-  (make-state assoc (state-count state)))
+  (make-state assoc (state-constraints state) (state-count state)))
 
 (define (allocate-variable state)
   (values (var (state-count state))
-          (make-state (state-assoc state) (+ 1 (state-count state)))))
+          (make-state (state-assoc state) (state-constraints state) (+ 1 (state-count state)))))
 
-(define empty-state (make-state '() 0))
+(define (add-constraint state new-constraint)
+  (make-state (state-assoc state)
+              (cons new-constraint (state-constraints state))
+              (state-count state)))
+
+(define (=/= left right)
+  (lambda (st)
+    (unit (add-constraint st `(=/= ,left ,right)))))
+
+(define empty-state (make-state '() '() 0))
 
 (define (walk u s)
   (let ((pr (and (var? u) (assp (lambda (v) (var=? u v)) s))))

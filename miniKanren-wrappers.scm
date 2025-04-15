@@ -55,9 +55,13 @@
     (let (($ (pull $)))
       (if (null? $) '() (cons (car $) (take (- n 1) (cdr $)))))))
 
-(define (reify-1st s/c)
-  (let ((v (walk* (var 0) (state-assoc s/c))))
-    (walk* v (reify-s v '()))))
+(define (reify-1st state)
+  (let* ((v  (walk* (var 0) (state-assoc state)))
+         (s  (reify-s (state-constraints state) (reify-s v '())))
+         (v^ (walk* v s)))
+    (if (null? (state-constraints state))
+        v^
+        (list v^ 'WHERE (walk* (state-constraints state) s)))))
 
 (define (walk* v s)
   (let ((v (walk v s)))
