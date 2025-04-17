@@ -1,3 +1,6 @@
+#!r6rs
+
+(import (rnrs) (chrKanren microKanren))
 
 (define-syntax test-check
   (syntax-rules ()
@@ -76,6 +79,7 @@
               (conj
                (appendo l s out)
                (== `(,l ,s ,out) q)))))))))))
+
 
 (define call-appendo2
   (call/fresh
