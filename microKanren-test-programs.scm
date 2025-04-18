@@ -15,10 +15,10 @@
                'tested-expression expected produced)))))))
 
 (define a-and-b
-  (conj 
+  (conj
    (call/fresh (lambda (a) (== a 7)))
-   (call/fresh 
-    (lambda (b) 
+   (call/fresh
+    (lambda (b)
       (disj
        (== b 5)
        (== b 6))))))
@@ -26,7 +26,7 @@
 (define fives
   (lambda (x)
     (disj
-     (== x 5)      
+     (== x 5)
      (lambda (a/c)
        (lambda ()
          ((fives x) a/c))))))
@@ -130,4 +130,3 @@
      (disj
       (relo `(5 . 6))
       (== x 3)))))
-

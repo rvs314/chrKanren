@@ -2,7 +2,7 @@
 
 (library (chrKanren microKanren)
   (export var var? var=? var-min var-max var>=?
-          state? state-assoc state-constraints state-count
+          state state? state-assoc state-constraints state-count
           state-with-assoc state-with-constraints state-with-counter
           allocate-variable add-constraint
           empty-state walk walk* check-constraints constraint->goal
@@ -13,9 +13,9 @@
 
   (import (rnrs))
 
-  (define (var c) (vector c))
-  (define (var? x) (vector? x))
-  (define (var-idx v) (vector-ref v 0))
+  (define-record-type (var-obj var var?)
+    (fields (immutable idx var-idx)))
+
   (define (var=? x1 x2) (= (var-idx x1) (var-idx x2)))
   (define (var-min x y) (var (min (var-idx x) (var-idx y))))
   (define (var-max x y) (var (max (var-idx x) (var-idx y))))
@@ -57,6 +57,8 @@
   (define (ext-s x v s) `((,x . ,v) . ,s))
 
   (define (check-constraints st)
+    (unit st)
+    #;
     (fold-left (lambda (a e) (bind a (constraint->goal e)))
                (unit (state-with-constraints st '()))
                (state-constraints st)))
@@ -78,20 +80,22 @@
   (define (fail st) mzero)
 
   (define (unify u v s)
+    (define (bind var val)
+      (values (ext-s var val s) `((,var . ,val))))
     (let ((u (walk u s)) (v (walk v s)))
       (cond
         ((and (var? u) (var? v) (var=? u v)) s)
         ((and (var? u) (var? v))
          (let ((mn (var-min u v))
                (mx (var-max u v)))
-           (values (ext-s mx mn s) `((,mx . ,mn)))))
-        ((var? u) (values (ext-s u v s) `((,u . ,v))))
-        ((var? v) (values (ext-s v u s) `((,v . ,u))))
+           (bind mx mn)))
+        ((var? u) (bind u v))
+        ((var? v) (bind v u))
         ((and (pair? u) (pair? v))
          (let-values (((s added) (unify (car u) (car v) s)))
            (if s
                (let-values (((s2 added2) (unify (cdr u) (cdr v) s)))
-                 (values s (append added added2)))
+                 (values s2 (append added added2)))
                (values #f #f))))
         (else
          (if (eqv? u v)

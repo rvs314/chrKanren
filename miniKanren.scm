@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren miniKanren)
-  (export fresh conde run run* take take-all take+drop)
+  (export fresh conde run run* take take-all take+drop reify-1st)
   (import (rnrs) (chrKanren microKanren))
 
   (define-syntax Zzz
