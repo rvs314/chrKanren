@@ -1,6 +1,6 @@
 #!r6rs
 
-(import (rnrs) (test check) (chrKanren microKanren) (chrKanren miniKanren))
+(import (rnrs) (chrKanren tests) (chrKanren microKanren) (chrKanren miniKanren))
 
 ;; To be moved to a separate miniKanren test file:
 
@@ -31,7 +31,7 @@
     ((1 2 3 4) (5))
     ((1 2 3 4 5) ())))
 
-
+;; TRICKY: Jason has two versions of this
 (define (rember*o tr o)
   (conde
    ((== '() tr) (== '() o))
@@ -48,7 +48,6 @@
         ((fresh (d^)
            (rember*o d d^)
            (== `(,a . ,d^) o))))))))
-
 
 (test-check rember*o
   (run 8 (q) (rember*o q '(1 2 8 3 4 5)))

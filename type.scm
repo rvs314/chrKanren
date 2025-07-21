@@ -14,7 +14,7 @@
 (define-rules
   ((has-typeo x p)
    (has-typeo x q)
-   (guard (not (eqv? p q)))
+   (guard (not (var=? p q)))
    =>
    fail)
   ((has-typeo x p) (guard (p (ground x))) => succeed)
@@ -30,7 +30,7 @@
   (lambda (st)
     (bind
      (state-constraints st)
-     (lambda (con1)
+     (lambda (con)
        (define-values (u a) (unify-trivially (cons con args) c1 st))
        (if u
            (unit (state-with-assoc st u))
