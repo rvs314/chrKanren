@@ -1,5 +1,3 @@
-
-
 * Reading List
 
 1. Theory and practice of constraint handling rules
