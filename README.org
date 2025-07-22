@@ -1,0 +1,7 @@
+#+title: chrKanren
+
+This is chrKanren, an implementation of miniKanren with support for the Constraint Handling Rules (CHR) language for defining constraints. It is currently a work in progress! The primary goals of this implementation are (in order of priority): Extensibility, User Experience, Performance, Novelty, and Simplicity of Implementation.
+
+The implementation will be written in /pure, standards-abiding/ R6RS scheme. The primary targets are racket and chez scheme, but other R6RS schemes should be able to run it without issue.
+
+#  LocalWords:  chrKanren
