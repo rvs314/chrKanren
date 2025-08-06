@@ -2,6 +2,37 @@
 
 This is chrKanren, an implementation of miniKanren with support for the Constraint Handling Rules (CHR) language for defining constraints. It is currently a work in progress! The primary goals of this implementation are (in order of priority): Extensibility, User Experience, Performance, Novelty, and Simplicity of Implementation.
 
-The implementation will be written in /pure, standards-abiding/ R6RS scheme. The primary targets are racket and chez scheme, but other R6RS schemes should be able to run it without issue.
+The implementation will be written in /pure, standards-abiding/ R6RS scheme. This means most of the code in the project is within R6RS libraries. The primary targets are racket and chez scheme, which run such programs, but other R6RS schemes should be able to run it without issue. In order to avoid re-inventing the wheel, chrKanren uses a number of [[https://srfi.schemers.org/][SRFIs]] (generally, ones which do not change reader syntax or heavily effect program behavior).
 
-#  LocalWords:  chrKanren
+* Installation
+
+The project puts the following constraints on the scheme implementation:
+- It must map libraries locally onto the file-system
+- It must have SRFI N available as the library ~(srfi :N)~
+
+** Racket
+
+One can install chrKanren as a local library using ~raco pkg install~, then reference it from either R6RS or racket (R6RS ~list~​s → Racket ~mlist~​s) without issue. The SRFIs required are all packaged correctly in the [[https://docs.racket-lang.org/srfi/][srfi]] library, which is shipped with racket.
+
+** Chez Scheme
+
+The necessary SRFIs are defined in the [[https://github.com/arcfide/chez-srfi][chez-srfi]] project. To use this, both this project and an installation of chez-srfi (named ~srfi~) must be in one of Chez's ~library-directories~ (which can be modified by calling chez with the ~--libdirs~ option or by setting the ~CHEZSCHEMELIBDIRS~ environment variable). One easy way to do this is to clone chez-srfi, rename the directory to ~srfi~, then run the included ~link-dirs.chezscheme-sps~ script:
+
+#+begin_src shell
+  # Enter one of the library directories
+  cd "$SOMEWHERE_IN_CHEZSCHEMELIBDIRS"
+  # Clone into chez-srfi, then enter it
+  git clone https://github.com/arcfide/chez-srfi srfi
+  cd srfi
+  # Link the relevant files in-place
+  chezscheme --script link-dirs.chezscheme.sps
+  # Install chrKanren in the same directory
+  cd ..
+  git clone https://github.com/rvs314/chrKanren
+#+end_src
+
+#  LocalWords:  chrKanren Chez's srfi
+
+** Other Schemes
+
+Other R6RS Scheme implementations (such as [[https://conservatory.scheme.org/ikarus/][Ikarus]], [[https://github.com/IronScheme/IronScheme][IronScheme]] or [[https://www.gnu.org/software/guile/][GNU Guile]]) may also work, but have not been tested extensively and may not have all the relevant SRFI implementations. If one can work with minimal additions, please send a PR!
