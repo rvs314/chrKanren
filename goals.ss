@@ -2,31 +2,43 @@
 
 (library (chrKanren goals)
   (export              goal        goal?
-          conj         conjunction conjunction? conjuncts
-          disj         disjunction disjunction? disjuncts
+          conj         conjunction conjunction? conjunction-left conjunction-right
+          disj         disjunction disjunction? disjunction-left disjunction-right
           make-call    call        call?        call-target call-arguments
-          fail                     failure?
-          succeed                  success?
+          fail         failure     failure?
+          succeed      success     success?
           with-values  projection  projection? projection-vars projection-cont
           Zzz          delay       delay?      delay-cont)
 
-  (import (rnrs) (chrKanren subst) (chrKanren vars) (chrKanren state) (chrKanren utils))
+  (import (rnrs)
+          (only (srfi :1) reduce)
+          (chrKanren subst) (chrKanren vars) (chrKanren state) (chrKanren utils))
 
   (define-record-type goal)
 
-  (define (fan-out new) (lambda args ((new) args)))
-
-  (define-record-type (conjunction conj conjunction?)
+  (define-record-type conjunction
     (parent goal)
-    (fields (immutable children conjuncts))
-    (sealed #t)
-    (protocol fan-out))
+    (fields left right))
 
-  (define-record-type (disjunction disj disjunction?)
+  (define (conj . cs)
+    (reduce make-conjunction succeed cs))
+
+  (define-record-type disjunction
     (parent goal)
-    (fields (immutable children disjuncts))
-    (sealed #t)
-    (protocol fan-out))
+    (fields left right))
+
+  (define (disj . cs)
+    (reduce make-disjunction fail cs))
+
+  (define-record-type success
+    (parent goal))
+
+  (define succeed (make-success))
+
+  (define-record-type failure
+    (parent goal))
+
+  (define fail (make-failure))
 
   (define-record-type call
     (parent goal)
@@ -51,12 +63,4 @@
     (fields cont))
 
   (define-syntax-rule (Zzz body ...)
-    (make-delay (lambda () body ...)))
-
-  (define fail (disj))
-  (define (failure? obj)
-    (and (disjunction? obj) (null? (disjuncts obj))))
-
-  (define succeed (conj))
-  (define (success? obj)
-    (and (conjunction? obj) (null? (conjuncts obj)))))
+    (make-delay (lambda () body ...))))

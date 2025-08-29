@@ -12,7 +12,7 @@ The project puts the following constraints on the scheme implementation:
 
 ** Racket
 
-One can install chrKanren as a local library using ~raco pkg install~, then reference it from either R6RS or racket (R6RS ~list~​s → Racket ~mlist~​s) without issue. The SRFIs required are all packaged correctly in the [[https://docs.racket-lang.org/srfi/][srfi]] library, which is shipped with racket.
+One can install chrKanren as a local library using ~raco pkg install~, then reference it from either R6RS or racket (note: R6RS ~list~​s → Racket ~mlist~​s) without issue. The SRFIs required are all packaged correctly in the [[https://docs.racket-lang.org/srfi/][srfi]] library, which is shipped with racket.
 
 ** Chez Scheme
 

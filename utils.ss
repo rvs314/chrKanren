@@ -4,8 +4,26 @@
   (export define-syntax-rule
           TODO
           *puts-output-port* puts
-          car+cdr find-and-remove)
-  (import (rnrs) (srfi :39))
+          car+cdr find-and-remove
+          compose const conjoin disjoin)
+  (import (rnrs)  (srfi :39))
+
+  (define (conjoin . fns)
+    (lambda xs
+      (for-all (lambda (f) (apply f xs)) fns)))
+
+  (define (disjoin . fns)
+    (lambda xs
+      (exists (lambda (f) (apply f xs)) fns)))
+
+  (define (const . xs)
+    (lambda _
+      (apply values xs)))
+
+  (define (compose . fs)
+    (define (compose₂ f1 f2)
+      (lambda xs (call-with-values (lambda () (apply f1 xs)) f2)))
+    (fold-left compose₂ values (reverse fs)))
 
   (define-syntax define-syntax-rule
     (syntax-rules ()
