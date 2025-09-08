@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export)
+  (export mature? mature age)
   (import (rnrs)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
@@ -14,7 +14,7 @@
   (define (mature strm)
     (if (mature? strm) strm (mature (step strm))))
 
-  (define (mature0 strm)
+  (define (age strm)
     (if (mature? strm) strm (step strm)))
 
   (define (start st gl)
@@ -37,7 +37,7 @@
 
   (define (step strm)
     (cond
-      [(choice? strm) (let ([s1 (mature0 (choice-left strm))]
+      [(choice? strm) (let ([s1 (age (choice-left strm))]
                             [s2 (choice-right strm)])
                         (cond
                           [(empty? s1) s2]
@@ -45,7 +45,7 @@
                            (make-solution (solution-first s1)
                                           (make-choice s2 (solution-rest s1)))]
                           [else (make-choice s2 s1)]))]
-      [(bind? strm) (let ([s (mature0 (bind-state strm))]
+      [(bind? strm) (let ([s (age (bind-state strm))]
                           [g (bind-goal strm)])
                       (cond
                         [(empty? s) s]
