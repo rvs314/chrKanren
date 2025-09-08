@@ -1,0 +1,22 @@
+#+title: Design Considerations for chrKanren
+
+I use the terms "HOM" to mean the traditional miniKanren implementation which you might find in something like The Reasoned Schemer, "FMK" to mean faster-miniKanren and "FOMK" to mean the first-order miniKanren implementation from the mk workshop.
+
+* Language Choice
+
+I've been burned rather badly by using the Racket/Chez intersection, so I'll be working in pure R6RS, which should allow for best-of-both-worlds. Racket has better tooling, so I'll likely be using that, but things should work OOTB on Chez. See instructions in the README.
+
+* Unification ⊂ CHR?
+
+Can we implement traditional unification as CHR? I think we can, which might give us a major benefit: CHR constraints are modular, allowing users to add new unifiable structures and custom unification rules (á la CLP(Set)). If unification is not a primitive, what is? Suppose we have the following:
+- Variables are just a disjoint datatype in the language
+- Variable "assignment" which is a CHR constraint
+- How would ~walk~ or ~occurs-check~ work?
+
+This seems like a nice-to-have, but not something strictly necessary. I'll come back to this once a simple first-order miniKanren is implemented.
+
+* First-Order Streams
+
+There is likely a better way to implement first-order streams than what is currently done by FOMK. See: [[file:sketch]]. A more immediate issue is that the stepping of streams themselves seems to be baked into the stream structure: streams can /only/ be used for searches. That's probably fine, but is a little disquieting.
+
+#  LocalWords:  chrKanren CHR mk HOM FMK FOM FOMK
