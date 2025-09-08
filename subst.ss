@@ -8,11 +8,12 @@
 
   (define (extend key value subst)
     (assert (var? key))
-    (and (not (occurs-in? key value))
+    (and (not (occurs-in? key value subst))
          (cons (cons key value) subst)))
 
   (define (lookup obj subst)
-    (cond [(null? subst)            (error 'lookup "Cannot find variable" obj)]
+    ;; TODO: This should just be a call to assp
+    (cond [(null? subst)            obj]
           [(var=? (caar subst) obj) (cdar subst)]
           [(pair? subst)            (lookup obj (cdr subst))]
           [else                     obj]))
@@ -37,6 +38,6 @@
 
   (define (occurs-in? needle haystack subst)
     (cond [(var? haystack)  (var=? needle haystack)]
-          [(pair? haystack) (or (occurs-in? needle (walk (car haystack) subst))
-                                (occurs-in? needle (walk (cdr haystack) subst)))]
+          [(pair? haystack) (or (occurs-in? needle (walk (car haystack) subst) subst)
+                                (occurs-in? needle (walk (cdr haystack) subst) subst))]
           [else             #f])))
