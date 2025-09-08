@@ -17,6 +17,6 @@ This seems like a nice-to-have, but not something strictly necessary. I'll come 
 
 * First-Order Streams
 
-There is likely a better way to implement first-order streams than what is currently done by FOMK. See: [[file:sketch]]. A more immediate issue is that the stepping of streams themselves seems to be baked into the stream structure: streams can /only/ be used for searches. That's probably fine, but is a little disquieting.
+There is likely a better way to implement first-order streams than what is currently done by FOMK. See: [[file:sketch]]. A more immediate issue is that the stepping of streams themselves seems to be baked into the stream structure: streams can /only/ be used for searches. That's probably fine but is a little disquieting.
 
 #  LocalWords:  chrKanren CHR mk HOM FMK FOM FOMK
