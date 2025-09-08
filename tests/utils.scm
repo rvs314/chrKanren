@@ -2,7 +2,6 @@
 
 (import (rnrs)
         (chrKanren utils)
-        (only (srfi :1))
         (srfi :64)
         (srfi :39)
         (srfi :26))
