@@ -19,4 +19,8 @@ This seems like a nice-to-have, but not something strictly necessary. I'll come 
 
 There is likely a better way to implement first-order streams than what is currently done by FOMK. See: [[file:sketch]]. A more immediate issue is that the stepping of streams themselves seems to be baked into the stream structure: streams can /only/ be used for searches. That's probably fine but is a little disquieting.
 
+* Unification vs Projection
+
+Currently, rather than using explicit unification/type-constraint goal, I use a single projection goal which should encompass them assuming the right constraint handling logic is in place. I'd like to replace this with CHR-specific stuff once that comes into being.
+
 #  LocalWords:  chrKanren CHR mk HOM FMK FOM FOMK
