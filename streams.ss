@@ -5,7 +5,7 @@
           make-solution solution solution? solution-first solution-rest
           make-choice   choice   choice?   choice-left choice-right
           make-pause    pause    pause?    pause-state pause-goal
-          make-bind     bind     bind?     bind-state bind-goal
+          make-bind     bind     bind?     bind-stream bind-goal
           empty-stream  empty    empty?)
 
   (import (rnrs))
@@ -26,7 +26,7 @@
 
   (define-record-type bind
     (parent stream)
-    (fields state goal))
+    (fields stream goal))
 
   (define-record-type empty
     (parent stream))

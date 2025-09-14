@@ -7,7 +7,8 @@
           make-call    call        call?        call-target call-arguments
           fail         failure     failure?
           succeed      success     success?
-          with-values  projection  projection? projection-vars projection-cont
+          with-values  make-projection
+                       projection  projection? projection-vars projection-cont
           Zzz          delay       delay?      delay-cont)
 
   (import (rnrs)
@@ -50,12 +51,15 @@
     (sealed #t)
     (fields vars cont))
 
-  (define-syntax-rule (with-values (vs ...)
+  (define-syntax-rule (with-values (vr ...)
                         body ...)
-    (make-projection
-     (list vs ...)
-     (lambda (vs ...)
-       body ...)))
+    (begin
+      (assert (var? vr))
+      ...
+      (make-projection
+       (list vr ...)
+       (lambda (vr ...)
+         body ...))))
 
   (define-record-type delay
     (parent goal)

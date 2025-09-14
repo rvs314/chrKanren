@@ -2,11 +2,16 @@
 
 (library (chrKanren relation)
   (export relation relation? relation-name relation-args relation-builder
-          define-relation)
+          make-relation call-relation define-relation)
   (import (rnrs) (chrKanren vars) (chrKanren subst) (chrKanren goals) (chrKanren utils))
 
   (define-record-type relation
     (fields name args builder))
+
+  (define (call-relation rel . args)
+    (assert (= (length args)
+               (length (relation-args rel))))
+    (apply (relation-builder rel) args))
 
   (define-syntax-rule (define-relation (name arg ...)
                         body body* ...)

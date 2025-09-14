@@ -3,3 +3,4 @@ attic
 /compiled/
 /.dir-locals.el
 *.log
+/tests/compiled/

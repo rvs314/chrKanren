@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export mature? mature age)
+  (export mature? mature age take)
   (import (rnrs)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
@@ -26,13 +26,15 @@
                           (start st (disjunction-right gl)))]
       [(conjunction? gl) (make-bind (make-pause st (conjunction-left gl))
                                     (conjunction-right gl))]
-      [(delay? gl)       (make-pause st gl)]
-      [(call? gl)        (start st (apply (call-target gl) (call-arguments gl)))]
+      [(delay? gl)       (make-pause st ((delay-cont gl)))]
+      [(call? gl)        (start st (apply call-relation
+                                          (call-target gl)
+                                          (call-arguments gl)))]
       [(projection? gl)  (let* ([vars  (projection-vars gl)]
                                 [subst (state-subst st)]
                                 [vars* (map (lambda (v) (walk* v subst)) vars)]
-                                [goal  (apply (projection-cont gl) vars*)])
-                           (start st goal))]
+                                [gl  (apply (projection-cont gl) vars*)])
+                           (start st gl))]
       [else (error 'start "Can't start goal" st gl)]))
 
   (define (step strm)
@@ -45,23 +47,27 @@
                            (make-solution (solution-first s1)
                                           (make-choice s2 (solution-rest s1)))]
                           [else (make-choice s2 s1)]))]
-      [(bind? strm) (let ([s (age (bind-state strm))]
+      [(bind? strm) (let ([s (age (bind-stream strm))]
                           [g (bind-goal strm)])
                       (cond
                         [(empty? s) s]
                         [(solution? s)
-                         (step (make-choice (make-pause (solution-first s) g)
-                                            (make-bind (solution-rest s) g)))]
-                        [else strm]))]
+                         (make-choice (make-pause (solution-first s) g)
+                                      (make-bind (solution-rest s) g))]
+                        [else (make-bind s g)]))]
       [(pause? strm) (start (pause-state strm) (pause-goal strm))]
       [else          strm]))
 
-  (define (take n strm)
-    (cond
-      [(or (zero? n) (empty? strm))
-       '()]
-      [(solution? strm)
-       (cons (solution-first strm)
-             (take (- n 1) (solution-rest strm)))]
-      [else
-       (take n (step strm))])))
+  (define take
+    (case-lambda
+      [(strm)
+       (take +inf.0 strm)]
+      [(n strm)
+       (cond
+         [(or (zero? n) (empty? strm))
+          '()]
+         [(solution? strm)
+          (cons (solution-first strm)
+                (take (- n 1) (solution-rest strm)))]
+         [else
+          (take n (step strm))])])))

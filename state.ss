@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren state)
-  (export state empty-state state-subst state-subst-update state-subst-set)
+  (export state make-state empty-state state-subst state-subst-update state-subst-set)
   (import (rnrs) (chrKanren subst))
 
   (define-record-type state
