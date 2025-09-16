@@ -5,8 +5,11 @@
           TODO
           *puts-output-port* puts
           car+cdr find-and-remove
-          compose const conjoin disjoin)
-  (import (rnrs)  (srfi :39))
+          compose const conjoin disjoin
+          sort merge)
+  (import (rnrs)
+          (srfi :39 parameters)
+          (only (srfi :1 lists) split-at))
 
   (define (conjoin . fns)
     (lambda xs
@@ -62,4 +65,28 @@
       [(null? lst)      (values #f        #f)]
       [(pred (car lst)) (car+cdr lst)]
       [else             (let-values ([(f v) (find-and-remove pred (cdr lst))])
-                          (values f (and v (cons (car lst) v))))])))
+                          (values f (and v (cons (car lst) v))))]))
+
+  ;; These aren't in the R6RS spec, unfortunately.
+  ;; They are implemented by SRFIs 132 and 32, but
+  ;; Chez only implements the former and Racket only the later.
+
+  (define merge
+    (case-lambda
+      [(l1 l2) (merge < l1 l2)]
+      [(< l1 l2)
+       (cond
+         [(null? l1) l2]
+         [(null? l2) l1]
+         [(< (car l1) (car l2)) (cons (car l1) (merge < (cdr l1) l2))]
+         [else                  (cons (car l2) (merge < (cdr l2) l1))])]))
+
+  (define sort
+    (case-lambda
+      [(lst) (sort < lst)]
+      [(< lst)
+       (if (or (null? lst) (null? (cdr lst)))
+           lst
+           (let*-values ([(ln)  (length lst)]
+                         [(h t) (split-at lst (floor (/ ln 2)))])
+             (merge < (sort < h) (sort < t))))])))

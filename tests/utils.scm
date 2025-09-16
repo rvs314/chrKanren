@@ -2,9 +2,11 @@
 
 (import (rnrs)
         (chrKanren utils)
-        (srfi :64)
-        (srfi :39)
-        (srfi :26))
+        (only (srfi :1 lists) make-list)
+        (srfi :64 testing)
+        (srfi :39 parameters)
+        (srfi :27 random-bits)
+        (srfi :26 cut))
 
 (test-begin "utils")
 
@@ -70,5 +72,20 @@
     (test-equal xs '(1 2))
     (test-equal ys '())
     (test-equal zs '(1))))
+
+(define (sorted? lst)
+  (or (null? lst)
+      (null? (cdr lst))
+      (and (<= (car lst) (cadr lst))
+           (sorted? (cdr lst)))))
+
+(define (random-int-list)
+  (map (lambda (_) (- (random-integer 60) 30)) (make-list (random-integer 30))))
+
+(test-group "sort"
+  (do [(i 30 (- i 1))]
+      [(< i 0)]
+    (test-assert (string-append "sort/" (number->string (- 30 i)))
+      (sorted? (sort (random-int-list))))))
 
 (test-end)
