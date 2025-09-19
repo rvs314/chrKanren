@@ -178,16 +178,8 @@
       (let ([strm* (mature-finite strm)])
         (cond
           [(empty? strm*)    (reverse acc)]
-          [(zero? idx)       (error 'rite-of-passage "Stream is infinite")]
+          [(zero? idx)       (error 'take-finite "Stream is infinite")]
           [(solution? strm*) (loop (solution-rest strm*)
                                    (- idx 1)
                                    (cons (solution-first strm*) acc))]))))
-
-  (define test-≈
-    (case-lambda
-      [(name left right)
-       (cond
-         [(and (stream? left) (stream? right))
-          (and (goal? left) (goal? right))])]
-      [(left right)
-       (test-≈ #f left right)])))
+  )

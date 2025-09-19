@@ -37,10 +37,15 @@
       [else         term]))
 
   (define (occurs-in? needle haystack subst)
-    (cond [(var? haystack)  (var=? needle haystack)]
-          [(pair? haystack) (or (occurs-in? needle (walk (car haystack) subst) subst)
-                                (occurs-in? needle (walk (cdr haystack) subst) subst))]
+    (cond [(var? haystack)
+           (var=? needle haystack)]
+          [(pair? haystack)
+           (or (occurs-in? needle (walk (car haystack) subst) subst)
+               (occurs-in? needle (walk (cdr haystack) subst) subst))]
           [else             #f]))
 
+  (define (assoc->goal assoc)
+    (== (car assoc) (cdr assoc)))
+
   (define (subst->goal subst)
-    (conj (map (lambda (k.v) (== (car k.v) (cdr k.v))) subst))))
+    (apply conj (map assoc->goal subst))))

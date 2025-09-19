@@ -23,4 +23,14 @@ There is likely a better way to implement first-order streams than what is curre
 
 Currently, rather than using explicit unification/type-constraint goal, I use a single projection goal which should encompass them assuming the right constraint handling logic is in place. I'd like to replace this with CHR-specific stuff once that comes into being.
 
+Addendum: I've given up on this goal, unfortunately. I may go back and re-implement something like this, but it seems silly to force our otherwise first-order implementation to have a singular higher-order goal.
+
+* Randomized Testing
+
+I've put quite a bit of work into a randomized testing harness, which should allow us to check simple
+algebraic properties. It's not quite done: I'd like to (at some point) add the ability to equate
+states/substitutions/goals up to α-equivalence. However, doing this has eaten quite a bit of time,
+so I think I'm going to say what I have is enough for now. Maybe once I have the reifier in place
+I can do something better with this. It would probably require something like birth records.
+
 #  LocalWords:  chrKanren CHR mk HOM FMK FOM FOMK
