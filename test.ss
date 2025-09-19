@@ -100,9 +100,9 @@
      [(disj (random-goal) (random-goal))]
      [(conj (random-goal) (random-goal))]
      [(make-call (random-relation) '())]
+     [(== (random-value) (random-value))]
      [(let ([g (random-goal)])
-        (make-projection () g))]
-     [(let ([g (random-goal)]) (Zzz g))]))
+        (Zzz g))]))
 
   (define *vars* (make-parameter #f))
 

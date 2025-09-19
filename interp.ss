@@ -30,11 +30,9 @@
       [(call? gl)        (start st (apply call-relation
                                           (call-target gl)
                                           (call-arguments gl)))]
-      [(projection? gl)  (let* ([vars  (projection-vars gl)]
-                                [subst (state-subst st)]
-                                [vars* (map (lambda (v) (walk* v subst)) vars)]
-                                [gl  (apply (projection-cont gl) vars*)])
-                           (start st gl))]
+      [(unification? gl) (let* ([lhs (unification-lhs gl)]
+                                [rhs (unification-rhs gl)])
+                           (unify lhs rhs st))]
       [else (error 'start "Can't start goal" st gl)]))
 
   (define (step strm)

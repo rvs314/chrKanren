@@ -1,19 +1,24 @@
 #!r6rs
 
 (library (chrKanren goals)
-  (export              goal        goal?
-          conj         conjunction conjunction? conjunction-left conjunction-right
-          disj         disjunction disjunction? disjunction-left disjunction-right
-          make-call    call        call?        call-target call-arguments
-          fail         failure     failure?
-          succeed      success     success?
-          with-values  make-projection
-                       projection  projection? projection-vars projection-cont
-          Zzz          delay       delay?      delay-cont)
+  (export
+   goal goal?
+
+   conjunction conj conjunction? conjunction-left conjunction-right
+   disj disjunction disjunction? disjunction-left disjunction-right
+
+   make-call call call? call-target call-arguments
+
+   fail         failure     failure?
+   succeed      success     success?
+
+   == unification unification? unification-lhs unification-rhs
+
+   Zzz delay delay? delay-cont)
 
   (import (rnrs)
           (only (srfi :1) reduce)
-          (chrKanren subst) (chrKanren vars) (chrKanren state) (chrKanren utils))
+          (chrKanren vars) (chrKanren utils))
 
   (define-record-type goal)
 
@@ -46,20 +51,10 @@
     (sealed #t)
     (fields target arguments))
 
-  (define-record-type projection
+  (define-record-type (unification == unification?)
     (parent goal)
     (sealed #t)
-    (fields vars cont))
-
-  (define-syntax-rule (with-values (vr ...)
-                        body ...)
-    (begin
-      (assert (var? vr))
-      ...
-      (make-projection
-       (list vr ...)
-       (lambda (vr ...)
-         body ...))))
+    (fields lhs rhs))
 
   (define-record-type delay
     (parent goal)
