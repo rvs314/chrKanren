@@ -2,9 +2,10 @@
 
 (library (chrKanren vars)
   (export *var-counter*
-          var var-name var-idx make-var var?
+          var var-name make-var var?
           var=?
-          fresh)
+          fresh
+          younger+older-var)
   (import (rnrs) (chrKanren utils) (srfi :39))
 
   (define *var-counter*
@@ -31,4 +32,15 @@
                         body body* ...)
     (let ([var-name (make-var 'var-name)]
           ...)
-      body body* ...)))
+      body body* ...))
+
+  (define (val-age vl)
+    (if (var? vl)
+        (var-idx vl)
+        +inf.0))
+
+  (define (younger+older-var v1 v2)
+    (assert (not (var=? v1 v2)))
+    (if (> (val-age v1) (val-age v2))
+        (values v1 v2)
+        (values v2 v1))))
