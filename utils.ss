@@ -2,9 +2,9 @@
 
 (library (chrKanren utils)
   (export define-syntax-rule
-          TODO
+          TODO late-bind
           *puts-output-port* puts
-          car+cdr find-and-remove
+          car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin
           sort merge)
   (import (rnrs)
@@ -37,6 +37,9 @@
            [(name args ...)
             (begin body ...)]))]))
 
+  (define-syntax-rule (late-bind proc)
+    (lambda args (apply proc args)))
+
   (define-syntax TODO
     (identifier-syntax
      (error 'TODO "Code incomplete")))
@@ -59,6 +62,13 @@
 
   (define (car+cdr pr)
     (values (car pr) (cdr pr)))
+
+  (define (ref-and-remove idx lst)
+    (cond
+      [(null? lst) (values #f        #f)]
+      [(zero? idx) (car+cdr lst)]
+      [else        (let-values ([(f v) (ref-and-remove (- idx 1) (cdr lst))])
+                     (values f (and v (cons (car lst) v))))]))
 
   (define (find-and-remove pred lst)
     (cond

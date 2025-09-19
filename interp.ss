@@ -1,15 +1,13 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export mature? mature age take)
+  (export mature age take step start)
+
   (import (rnrs)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
           (chrKanren relation) (chrKanren subst)
-          (chrKanren state))
-
-  (define (mature? strm)
-    (and (or (empty? strm) (or (solution? strm)))))
+          (chrKanren state) (chrKanren unify))
 
   (define (mature strm)
     (if (mature? strm) strm (mature (step strm))))
@@ -20,7 +18,7 @@
   (define (start st gl)
     (cond
       [(failure? gl)     empty-stream]
-      [(success? gl)     (make-solution st empty-stream)]
+      [(success? gl)     (make-singleton st)]
       [(disjunction? gl) (make-choice
                           (start st (disjunction-left gl))
                           (start st (disjunction-right gl)))]
