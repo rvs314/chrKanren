@@ -1,8 +1,8 @@
 #!r6rs
 
 (library (chrKanren subst)
-  (export empty-subst extend lookup walk walk*)
-  (import (rnrs) (chrKanren vars))
+  (export empty-subst extend lookup walk walk* subst->goal)
+  (import (rnrs) (chrKanren vars) (chrKanren streams) (chrKanren goals))
 
   (define empty-subst '())
 
@@ -40,4 +40,7 @@
     (cond [(var? haystack)  (var=? needle haystack)]
           [(pair? haystack) (or (occurs-in? needle (walk (car haystack) subst) subst)
                                 (occurs-in? needle (walk (cdr haystack) subst) subst))]
-          [else             #f])))
+          [else             #f]))
+
+  (define (subst->goal subst)
+    (conj (map (lambda (k.v) (== (car k.v) (cdr k.v))) subst))))
