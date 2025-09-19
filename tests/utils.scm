@@ -2,7 +2,7 @@
 
 (import (rnrs)
         (chrKanren utils)
-        (only (srfi :1 lists) make-list)
+        (only (srfi :1 lists) list-tabulate)
         (srfi :64 testing)
         (srfi :39 parameters)
         (srfi :27 random-bits)
@@ -80,7 +80,8 @@
            (sorted? (cdr lst)))))
 
 (define (random-int-list)
-  (map (lambda (_) (- (random-integer 60) 30)) (make-list (random-integer 30))))
+  (list-tabulate (random-integer 30)
+                 (lambda (_) (- (random-integer 60) 30))))
 
 (test-group "sort"
   (do [(i 30 (- i 1))]
