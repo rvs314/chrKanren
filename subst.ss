@@ -1,8 +1,11 @@
 #!r6rs
 
 (library (chrKanren subst)
-  (export empty-subst extend lookup walk walk* subst->goal)
-  (import (rnrs) (chrKanren vars) (chrKanren streams) (chrKanren goals))
+  (export empty-subst extend lookup walk walk* subst->goal
+          subst=?)
+  (import (rnrs)
+          (only (srfi :1 lists) lset-union)
+          (chrKanren vars) (chrKanren streams) (chrKanren goals))
 
   (define empty-subst '())
 
@@ -48,4 +51,17 @@
     (== (car assoc) (cdr assoc)))
 
   (define (subst->goal subst)
-    (apply conj (map assoc->goal subst))))
+    (apply conj (map assoc->goal subst)))
+
+  (define (subst-domain subst)
+    (map car subst))
+
+  (define (subst=? left right)
+    (define domain
+      (lset-union var=?
+                  (subst-domain left)
+                  (subst-domain right)))
+    (for-all (lambda (var)
+               (equal? (lookup var left)
+                       (lookup var right)))
+             domain)))

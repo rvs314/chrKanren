@@ -18,20 +18,34 @@
 
   (import (rnrs)
           (only (srfi :1) reduce)
+          (chrKanren check)
           (chrKanren vars) (chrKanren utils))
 
   (define-record-type goal)
 
   (define-record-type conjunction
     (parent goal)
-    (fields left right))
+    (fields left right)
+    (protocol
+     (lambda (new)
+       (lambda (l r)
+         (check (goal? l))
+         (check (goal? r))
+         ((new) l r)))))
 
   (define (conj . cs)
     (reduce make-conjunction succeed cs))
 
   (define-record-type disjunction
     (parent goal)
-    (fields left right))
+    (fields left right)
+    (protocol
+     (lambda (new)
+       (lambda (l r)
+         (check (goal? l))
+         (check (goal? r))
+         ((new) l r)))))
+
 
   (define (disj . cs)
     (reduce make-disjunction fail cs))

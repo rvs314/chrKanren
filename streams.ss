@@ -10,25 +10,49 @@
           make-singleton singleton?
           mature?)
 
-  (import (rnrs))
+  (import (rnrs) (chrKanren check))
 
   (define-record-type stream)
 
   (define-record-type solution
     (parent stream)
-    (fields first rest))
+    (fields first rest)
+    (protocol
+     (lambda (new)
+       (lambda (first rest)
+         (check (stream? rest) "Solution-rest is a stream")
+         (check (not (stream? first)) "Solution is not a stream" first)
+         ((new) first rest)))))
 
   (define-record-type choice
     (parent stream)
-    (fields left right))
+    (fields left right)
+    (protocol
+     (lambda (new)
+       (lambda (left right)
+         (check (stream? left) "choice-left is a stream")
+         (check (stream? right) "choice-right is a stream")
+         ((new) left right)))))
 
   (define-record-type pause
     (parent stream)
-    (fields state goal))
+    (fields state goal)
+    (protocol
+     (lambda (new)
+       (lambda (st gl)
+         (check (not (stream? st)) "pause-state is not a stream" st)
+         (check (not (stream? gl)) "pause-goal is not a stream" gl)
+         ((new) st gl)))))
 
   (define-record-type bind
     (parent stream)
-    (fields stream goal))
+    (fields stream goal)
+    (protocol
+     (lambda (new)
+       (lambda (strm gl)
+         (check (stream? strm))
+         (check (not (stream? gl)) "bind-goal is not a stream" gl)
+         ((new) strm gl)))))
 
   (define-record-type empty
     (parent stream))

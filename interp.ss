@@ -4,13 +4,21 @@
   (export mature age take step start)
 
   (import (rnrs)
+          (chrKanren check)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
           (chrKanren relation) (chrKanren subst)
           (chrKanren state) (chrKanren unify))
 
-  (define (mature strm)
-    (if (mature? strm) strm (mature (step strm))))
+  (define mature
+    (case-lambda
+      [(strm)
+       (mature strm +inf.0)]
+      [(strm k)
+       (check (stream? strm) "Cannot mature a non-stream")
+       (cond
+         [(or (zero? k) (mature? strm)) strm]
+         [else (mature (step strm) (- k 1))])]))
 
   (define (age strm)
     (if (mature? strm) strm (step strm)))
@@ -19,19 +27,24 @@
     (cond
       [(failure? gl)     empty-stream]
       [(success? gl)     (make-singleton st)]
-      [(disjunction? gl) (make-choice
-                          (start st (disjunction-left gl))
-                          (start st (disjunction-right gl)))]
-      [(conjunction? gl) (make-bind (make-pause st (conjunction-left gl))
-                                    (conjunction-right gl))]
-      [(delay? gl)       (make-pause st ((delay-cont gl)))]
-      [(call? gl)        (start st (apply call-relation
-                                          (call-target gl)
-                                          (call-arguments gl)))]
-      [(unification? gl) (let* ([lhs (unification-lhs gl)]
-                                [rhs (unification-rhs gl)])
-                           (unify lhs rhs st))]
-      [else (error 'start "Can't start goal" st gl)]))
+      [(disjunction? gl)
+       (step (make-choice (make-pause st (disjunction-left gl))
+                          (make-pause st (disjunction-right gl))))]
+      [(conjunction? gl)
+       (step (make-bind (make-pause st (conjunction-left gl))
+                        (conjunction-right gl)))]
+      [(delay? gl)
+       (make-pause st ((delay-cont gl)))]
+      [(call? gl)
+       (start st (apply call-relation
+                        (call-target gl)
+                        (call-arguments gl)))]
+      [(unification? gl)
+       (let* ([lhs (unification-lhs gl)]
+              [rhs (unification-rhs gl)])
+         (or (unify lhs rhs st) empty-stream))]
+      [else
+       (check #f "Not sure how to start goal" st gl)]))
 
   (define (step strm)
     (cond
@@ -48,8 +61,8 @@
                       (cond
                         [(empty? s) s]
                         [(solution? s)
-                         (make-choice (make-pause (solution-first s) g)
-                                      (make-bind (solution-rest s) g))]
+                         (step (make-choice (make-pause (solution-first s) g)
+                                            (make-bind (solution-rest s) g)))]
                         [else (make-bind s g)]))]
       [(pause? strm) (start (pause-state strm) (pause-goal strm))]
       [else          strm]))

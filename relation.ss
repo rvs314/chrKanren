@@ -9,8 +9,6 @@
     (fields name args builder))
 
   (define (call-relation rel . args)
-    (assert (= (length args)
-               (length (relation-args rel))))
     (apply (relation-builder rel) args))
 
   (define-syntax-rule (define-relation (name arg ...)

@@ -2,9 +2,10 @@
 
 (library (chrKanren state)
   (export state make-state empty-state state?
-          state-subst state-subst-update state-subst-set state-extend
-          state->goal)
-  (import (rnrs) (chrKanren subst))
+          state-subst state-subst-update state-subst-set
+          state-lookup state-extend
+          state->goal state=?)
+  (import (rnrs) (chrKanren utils) (chrKanren subst))
 
   (define-record-type state
     (fields subst))
@@ -22,5 +23,11 @@
     (and subst^
          (state-subst-set state subst^)))
 
+  (define (state-lookup key state)
+    (lookup key (state-subst state)))
+
   (define (state->goal state)
-    (subst->goal (state-subst state))))
+    (subst->goal (state-subst state)))
+
+  (define (state=? state1 state2)
+    (subst=? (state-subst state1) (state-subst state2))))
