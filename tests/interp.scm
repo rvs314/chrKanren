@@ -1,7 +1,6 @@
 #!r6rs
 
 (import (rnrs)
-        (chrKanren check)
         (chrKanren generator)
         (chrKanren utils)
         (chrKanren interp) (chrKanren streams) (chrKanren goals)
@@ -33,16 +32,14 @@
   (check (result=?
           (take-finite r)
           (take-finite (make-bind r succeed)))))
-#;
-(define-random-test (choice-identity [r (random-stream)])
-  (test-same "(make-choice r empty-stream) ≈ r"
-             result=?
-             (take r)
-             (take (make-choice r empty-stream)))
-  (test-same "(make-choice empty-stream r) ≈ r"
-             result=?
-             (take r)
-             (take (make-choice empty-stream r))))
+
+(define-test (choice-identity [r stream-generator])
+  (check (result=?
+          (take-finite r)
+          (take-finite (make-choice r empty-stream))))
+  (check (result=?
+          (take-finite r)
+          (take-finite (make-choice empty-stream r)))))
 
 (define-test (disj-commutative [j goal-generator]
                                [k goal-generator]
@@ -72,11 +69,3 @@
    (result=?
     (take-finite (start s (conj (conj i j) k)))
     (take-finite (start s (conj i (conj j k)))))))
-
-;; (define-relation (appendo xs ys zs)
-;;   (disj
-;;    (conj (== xs '()) (== ys zs))
-;;    (fresh (x xss zss)
-;;      (conj (== xs (cons x xss))
-;;            (== zs (cons x zss))
-;;            (appendo xss ys zss)))))

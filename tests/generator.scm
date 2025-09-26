@@ -2,7 +2,6 @@
 
 (import (rnrs)
         (chrKanren utils)
-        (chrKanren check)
         (chrKanren test)
         (chrKanren generator)
         (chrKanren streams)

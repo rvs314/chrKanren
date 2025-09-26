@@ -1,7 +1,8 @@
 #!r6rs
 
 (library (chrKanren test)
-  (export define-test test-count
+  (export check
+          define-test test-count
           *test-output-port* *default-test-count*
           *fail-fast*
           *finite-step-count* mature-finite take-finite)
@@ -70,6 +71,7 @@
                            (display o (*test-output-port*))))
                        objs))
            (show "Running " 'name "...")
+           (flush-output-port (*test-output-port*))
            (guard [e [else
                       (show "FAILED: "
                             #\newline

@@ -1,6 +1,6 @@
 #!r6rs
 
-(library (chrKanren stream)
+(library (chrKanren streams)
   (export stream stream?
           make-solution solution solution? solution-first solution-rest
           make-choice   choice   choice?   choice-left choice-right

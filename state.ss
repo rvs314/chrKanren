@@ -4,7 +4,8 @@
   (export state make-state empty-state state?
           state-subst state-subst-update state-subst-set
           state-lookup state-extend
-          state->goal state=?)
+          state->goal state=?
+          reify)
   (import (rnrs) (chrKanren utils) (chrKanren subst))
 
   (define-record-type state
@@ -30,4 +31,7 @@
     (subst->goal (state-subst state)))
 
   (define (state=? state1 state2)
-    (subst=? (state-subst state1) (state-subst state2))))
+    (subst=? (state-subst state1) (state-subst state2)))
+
+  (define (reify vars state)
+    (map (lambda (v) (walk* v (state-subst state))) vars)))
