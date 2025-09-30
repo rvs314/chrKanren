@@ -31,8 +31,41 @@ The necessary SRFIs are defined in the [[https://github.com/arcfide/chez-srfi][c
   git clone https://github.com/rvs314/chrKanren
 #+end_src
 
-#  LocalWords:  chrKanren Chez's srfi
 
 ** Other Schemes
 
 Other R6RS Scheme implementations (such as [[https://conservatory.scheme.org/ikarus/][Ikarus]], [[https://github.com/IronScheme/IronScheme][IronScheme]] or [[https://www.gnu.org/software/guile/][GNU Guile]]) may also work, but have not been tested extensively and may not have all the relevant SRFI implementations. If one can work with minimal additions, please send a PR!
+
+* Testing
+
+The implementation of chrKanren has a number of tests in the ~tests/~ directory, which are each top-level scheme programs. When evaluated, these programs run the tests contained within, printing the result of each test and the cause of any errors, should they occur.
+
+** Racket
+
+To run all tests sequentially using Racket, execute the following command:
+
+#+begin_src shell
+  raco test -e -c chrKanren
+#+end_src
+
+To run them in parallel, only showing tests which fail, execute the following:
+
+#+begin_src shell
+  raco test --drdr -c chrKanren
+#+end_src
+
+** Chez Scheme (or other implementations)
+
+To run all tests sequentially using Chez, run the included shell script:
+
+#+begin_src shell
+  sh ./run-tests.sh
+#+end_src
+
+Setting the ~SCHEME_CMD~ environment variable will change the implementation used to run the tests, so the following runs the tests in a hypothetical example scheme:
+
+#+begin_src shell
+  SCHEME_CMD="my_cool_scheme --run-as-script" ./run_tests.sh
+#+end_src
+
+#  LocalWords:  chrKanren Chez's srfi

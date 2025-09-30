@@ -3,6 +3,11 @@
 (import (rnrs)
         (chrKanren test)
         (chrKanren base)
+        (chrKanren vars)
+        (chrKanren state)
+        (chrKanren subst)
+        (chrKanren interp)
+        (chrKanren unify)
         (only (srfi :1 lists) lset=))
 
 (define-relation (animalo obj)

@@ -3,7 +3,7 @@
 (library (chrKanren test)
   (export check
           define-test test-count
-          *test-output-port* *default-test-count*
+          *default-test-count*
           *fail-fast*
           *finite-step-count* mature-finite take-finite)
   (import (rnrs)
@@ -17,10 +17,7 @@
           (chrKanren subst)
           (chrKanren state)
           (chrKanren streams)
-          (srfi :64 testing)
           (srfi :39 parameters))
-
-  (define *test-output-port* (make-parameter (current-error-port)))
 
   (define *default-test-count*
     (make-parameter 30))
@@ -47,7 +44,32 @@
     make-test-condition test-condition?
     (arg test-condition-args))
 
-  (define *fail-fast* (make-parameter #f))
+  (define *fail-fast* (make-parameter (member  "--fail-fast" (cdr (command-line)))))
+
+  (define (report . objs)
+    (let-values (((op objs)
+                  (if (and (pair? objs) (output-port? (car objs)))
+                      (car+cdr objs)
+                      (values (current-output-port) objs))))
+      (for-each (lambda (o)
+                  (when o
+                    (display o op)))
+                objs)
+      (flush-output-port op)))
+
+  (define (report-condition e)
+    (report (current-error-port)
+            "FAILED: "
+            #\newline
+            (and (message-condition? e)
+                 (fresh-line (condition-message e))))
+    (when (test-condition? e)
+      (for-each (lambda (k.v)
+                  (report (current-error-port)
+                          (car k.v) " ← " (cdr k.v) #\newline))
+                (test-condition-args e)))
+    (when (*fail-fast*)
+      (raise e)))
 
   (define-syntax define-test
     (syntax-rules (test-count)
@@ -65,26 +87,10 @@
                               (list nm ...)))))]]
              body body* ...))
          (define (run-test test-cont)
-           (define (show . objs)
-             (for-each (lambda (o)
-                         (when o
-                           (display o (*test-output-port*))))
-                       objs))
-           (show "Running " 'name "...")
-           (flush-output-port (*test-output-port*))
-           (guard [e [else
-                      (show "FAILED: "
-                            #\newline
-                            (and (message-condition? e)
-                                 (fresh-line (condition-message e))))
-                      (when (test-condition? e)
-                        (for-each (lambda (k.v)
-                                    (show (car k.v) " ← " (cdr k.v) #\newline))
-                                  (test-condition-args e)))
-                      (when (*fail-fast*)
-                        (raise e))]]
-                (test-cont)
-                (show "passed" #\newline)))
+           (report "Running " 'name "...")
+           (guard [e [else (report-condition e)]]
+             (test-cont)
+             (report "passed" #\newline)))
          (define (name nm ...)
            (run-test (lambda () (test-body nm ...))))
          (define count k)
@@ -92,11 +98,11 @@
            [(positive? count)
             (run-test
              (lambda ()
-               (let loop ([i 1])
-                 (when (<= i count)
-                   (let ([nm (gen (test-size (/ i count)))] ...)
-                     (test-body nm ...)
-                     (loop (+ i 1)))))))]
+               (repeatedly
+                count
+                (lambda (i)
+                  (let ([nm (gen (test-size (/ i count)))] ...)
+                    (test-body nm ...))))))]
            [(zero? count)
             (run-test (lambda () 'skipped))]
            [else

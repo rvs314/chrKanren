@@ -3,11 +3,12 @@
 (library (chrKanren utils)
   (export define-syntax-rule
           TODO
-          eta thunk
+          eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin on
-          sort merge make-tree=?)
+          sort merge make-tree=?
+          repeatedly)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take))
@@ -44,9 +45,6 @@
 
   (define-syntax-rule (eta proc)
     (lambda args (apply proc args)))
-
-  (define-syntax-rule (thunk body ...)
-    (lambda _ body ...))
 
   (define-syntax TODO
     (identifier-syntax
@@ -117,4 +115,10 @@
         [(for-all pair? lists)
          (and (apply (make-tree=? elem=?) (map car lists))
               (apply (make-tree=? elem=?) (map cdr lists)))]
-        [else (apply elem=? lists)]))))
+        [else (apply elem=? lists)])))
+
+  (define (repeatedly k thnk)
+    (let loop ([i 0])
+      (when (< i k)
+        (thnk i)
+        (loop (+ i 1))))))
