@@ -5,6 +5,7 @@
         (chrKanren base)
         (chrKanren vars)
         (chrKanren state)
+        (chrKanren streams)
         (chrKanren subst)
         (chrKanren interp)
         (chrKanren unify)
@@ -14,7 +15,8 @@
   (conde
    [(== obj 'cow)]
    [(== 'goat obj)]
-   [(== 'pig obj)]))
+   [succeed (== 'pig obj)]
+   [(== obj 'robot) fail]))
 
 (define-test test-animalo
   (define the-animals '(pig goat cow))
@@ -27,16 +29,18 @@
    the-animals))
 
 (define-relation (chaino xs ys)
-  (fresh (a)
+  (fresh (a b c d)
     (== xs a)
-    (== a ys)))
+    (== a b)
+    (== b c)
+    (== d c)
+    (== d ys)))
 
 (define-test test-chaino
   (define res (run* (p q) (chaino p q)))
   (check (= (length res) 1))
   (check (eq? (caar res) (cadar res))))
 
-#;
 (define-relation (appendo xs ys zs)
   (conde
    [(== xs '()) (== ys zs)]
@@ -44,4 +48,9 @@
       (== xs (cons x xss))
       (== zs (cons x zss))
       (appendo xss ys zss))]))
+
+#;
+(define-test test-appendo
+  (define res (run* (p q r) (appendo p q r)))
+  ())
 

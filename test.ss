@@ -44,7 +44,7 @@
     make-test-condition test-condition?
     (arg test-condition-args))
 
-  (define *fail-fast* (make-parameter (member  "--fail-fast" (cdr (command-line)))))
+  (define *fail-fast* (make-parameter (member "--fail-fast" (cdr (command-line)))))
 
   (define (report . objs)
     (let-values (((op objs)

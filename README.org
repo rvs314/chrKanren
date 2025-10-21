@@ -31,7 +31,6 @@ The necessary SRFIs are defined in the [[https://github.com/arcfide/chez-srfi][c
   git clone https://github.com/rvs314/chrKanren
 #+end_src
 
-
 ** Other Schemes
 
 Other R6RS Scheme implementations (such as [[https://conservatory.scheme.org/ikarus/][Ikarus]], [[https://github.com/IronScheme/IronScheme][IronScheme]] or [[https://www.gnu.org/software/guile/][GNU Guile]]) may also work, but have not been tested extensively and may not have all the relevant SRFI implementations. If one can work with minimal additions, please send a PR!
