@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren syntax)
-  (export run run* conde)
+  (export run run* conde fresh define-relation)
   (import (rnrs)
           (chrKanren goals)
           (chrKanren streams)
@@ -9,6 +9,7 @@
           (chrKanren interp)
           (chrKanren subst)
           (chrKanren vars)
+          (chrKanren relation)
           (chrKanren utils)
           (srfi :39 parameters))
 
@@ -23,4 +24,22 @@
     (run +inf.0 (var ...) goal ...))
 
   (define-syntax-rule (conde [conjunct ...] ...)
-    (disj (conj conjunct ...) ...)))
+    (disj (conj conjunct ...) ...))
+
+  (define-syntax-rule (fresh (var-name ...)
+                        body body* ...)
+    (let ([var-name (make-var 'var-name)]
+          ...)
+      (conj body body* ...)))
+
+  (define-syntax-rule (define-relation (name arg ...)
+                        body body* ...)
+    (define the-relation
+      (make-relation
+       'name
+       (list 'arg ...)
+       (lambda (arg ...)
+         (conj body body* ...))))
+
+    (define (name arg ...)
+      (Zzz (make-call the-relation (list arg ...))))))

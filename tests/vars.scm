@@ -1,6 +1,11 @@
 #!r6rs
 
-(import (rnrs) (chrKanren test) (chrKanren vars) (srfi :39 parameters))
+(import (rnrs)
+        (chrKanren test)
+        (chrKanren vars)
+        (chrKanren base)
+        (srfi :39 parameters)
+        (chrKanren syntax))
 
 (define-test var-identity
   (define v1 (make-var 'v1))
@@ -11,9 +16,11 @@
 
 (define-test test-fresh
   (fresh (p q)
-    (check (eq? p p))
-    (check (not (eq? p q)))
-    (check (eq? (var-name p) 'p))))
+    (begin
+      (check (eq? p p))
+      (check (not (eq? p q)))
+      (check (eq? (var-name p) 'p))
+      succeed)))
 
 (define-test test-var-counter
   (*var-counter* 0)
