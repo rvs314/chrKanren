@@ -26,11 +26,11 @@
          [st* (unify p q st)]
          [_   (check (solution? st*))]
          [st0 (solution-first st*)])
-    (check (not (var=? p q)))
-    (check (var=? p (state-lookup p st)))
-    (check (var=? q (state-lookup q st)))
-    (check (var=? q (state-lookup p st0)))
-    (check (var=? q (state-lookup q st0)))))
+    (check (not (eq? p q)))
+    (check (eq? p (state-lookup p st)))
+    (check (eq? q (state-lookup q st)))
+    (check (eq? q (state-lookup p st0)))
+    (check (eq? q (state-lookup q st0)))))
 
 (define-test occurs-check
   (let* ([p   (make-var 'p)]
@@ -45,12 +45,12 @@
          [st* (take-finite (unify (list p q) (list q r) st))]
          [_   (check (pair? st*))]
          [st0 (car st*)])
-    (check (var=? p (state-lookup p st)))
-    (check (var=? q (state-lookup q st)))
-    (check (var=? r (state-lookup r st)))
-    (check (var=? q (state-lookup p st0)))
-    (check (var=? r (state-lookup q st0)))
-    (check (var=? r (state-lookup r st0)))))
+    (check (eq? p (state-lookup p st)))
+    (check (eq? q (state-lookup q st)))
+    (check (eq? r (state-lookup r st)))
+    (check (eq? q (state-lookup p st0)))
+    (check (eq? r (state-lookup q st0)))
+    (check (eq? r (state-lookup r st0)))))
 
 (define-test dual-pair
   (let* ([p   (make-var 'p)]

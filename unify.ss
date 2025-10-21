@@ -9,8 +9,7 @@
     (define lhs (walk lhs* (state-subst st)))
     (define rhs (walk rhs* (state-subst st)))
     (cond
-      [(eq? lhs rhs)   (make-singleton st)]
-      [(var=? lhs rhs) (make-singleton st)]
+      [(eq? lhs rhs)  (make-singleton st)]
       [(or (var? lhs) (var? rhs))
        (let*-values ([(yng old) (younger+older-var lhs rhs)]
                      [(ex) (state-extend yng old st)])

@@ -17,14 +17,14 @@
   (define (lookup obj subst)
     ;; TODO: This should just be a call to assp
     (cond [(null? subst)            obj]
-          [(var=? (caar subst) obj) (cdar subst)]
+          [(eq? (caar subst) obj) (cdar subst)]
           [(pair? subst)            (lookup obj (cdr subst))]
           [else                     obj]))
 
   (define (walk term subst)
     (if (var? term)
         (let ((res (lookup term subst)))
-          (if (var=? term res)
+          (if (eq? term res)
               term
               (walk res subst)))
         term))
@@ -58,7 +58,7 @@
 
   (define (subst=? left right)
     (define domain
-      (lset-union var=?
+      (lset-union eq?
                   (subst-domain left)
                   (subst-domain right)))
     (for-all (lambda (var)

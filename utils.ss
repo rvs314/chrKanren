@@ -7,11 +7,19 @@
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin on
+          and-proc or-proc
           sort merge make-tree=?
           repeatedly)
   (import (rnrs)
           (srfi :39 parameters)
-          (only (srfi :1 lists) split-at take))
+          (only (srfi :1 lists) split-at take reduce))
+
+
+  (define (and-proc . objs)
+    (reduce (lambda (x y) (and x y)) #t objs))
+
+  (define (or-proc . objs)
+    (reduce (lambda (x y) (or x y)) #f objs))
 
   (define (conjoin . fns)
     (lambda xs
