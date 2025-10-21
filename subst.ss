@@ -34,14 +34,14 @@
       [(pair? term) (cons (walk* (car term) subst)
                           (walk* (cdr term) subst))]
       [(var? term)  (let ([res (walk term subst)])
-                      (if (var=? res term)
+                      (if (eq? res term)
                           term
                           (walk* res subst)))]
       [else         term]))
 
   (define (occurs-in? needle haystack subst)
     (cond [(var? haystack)
-           (var=? needle haystack)]
+           (eq? needle haystack)]
           [(pair? haystack)
            (or (occurs-in? needle (walk (car haystack) subst) subst)
                (occurs-in? needle (walk (cdr haystack) subst) subst))]
