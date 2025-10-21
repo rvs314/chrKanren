@@ -32,7 +32,10 @@
        (lambda (left right)
          (check (stream? left) "choice-left is a stream")
          (check (stream? right) "choice-right is a stream")
-         ((new) left right)))))
+         (cond
+           [(empty? left)  right]
+           [(empty? right) left]
+           [else ((new) left right)])))))
 
   (define-record-type pause
     (parent stream)
@@ -52,7 +55,9 @@
        (lambda (strm gl)
          (check (stream? strm))
          (check (not (stream? gl)) "bind-goal is not a stream" gl)
-         ((new) strm gl)))))
+         (if (empty? strm)
+             strm
+             ((new) strm gl))))))
 
   (define-record-type empty
     (parent stream))
