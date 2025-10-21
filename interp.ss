@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export mature age take step start)
+  (export mature age take+drop take drop step start)
 
   (import (rnrs)
           (chrKanren check)
@@ -47,6 +47,7 @@
        (check #f "Not sure how to start goal" st gl)]))
 
   (define (step strm)
+    (check (stream? strm))
     (cond
       [(choice? strm) (let ([s1 (age (choice-left strm))]
                             [s2 (choice-right strm)])
@@ -67,16 +68,25 @@
       [(pause? strm) (start (pause-state strm) (pause-goal strm))]
       [else          strm]))
 
-  (define take
+  (define take+drop
     (case-lambda
       [(strm)
-       (take +inf.0 strm)]
+       (take+drop +inf.0 strm)]
       [(n strm)
        (cond
          [(or (zero? n) (empty? strm))
-          '()]
+          (values '() strm)]
          [(solution? strm)
-          (cons (solution-first strm)
-                (take (- n 1) (solution-rest strm)))]
+          (let-values ([(f r) (take+drop (- n 1) (solution-rest strm))])
+            (values (cons (solution-first strm) f)
+                    r))]
          [else
-          (take n (step strm))])])))
+          (take+drop n (step strm))])]))
+
+  (define (take . ks)
+    (let-values ([(f r) (apply take+drop ks)])
+      f))
+
+  (define (drop . ks)
+    (let-values ([(f r) (apply take+drop ks)])
+      r)))
