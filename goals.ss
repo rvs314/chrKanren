@@ -2,7 +2,7 @@
 
 (library (chrKanren goals)
   (export
-   goal goal?
+   goal goal? goal=?
 
    conjunction conj conjunction? conjunction-left conjunction-right
    disj disjunction disjunction? disjunction-left disjunction-right
@@ -46,7 +46,6 @@
          (check (goal? r))
          ((new) l r)))))
 
-
   (define (disj . cs)
     (reduce make-disjunction fail cs))
 
@@ -76,4 +75,29 @@
     (fields cont))
 
   (define-syntax-rule (Zzz body ...)
-    (make-delay (lambda () body ...))))
+    (make-delay (lambda () body ...)))
+
+  (define goal=?
+    (eta
+     (disjoin
+      (on and-proc success?)
+      (on and-proc failure?)
+      (conjoin
+       (on and-proc conjunction?)
+       (on goal=? conjunction-left)
+       (on goal=? conjunction-right))
+      (conjoin
+       (on and-proc disjunction?)
+       (on goal=? disjunction-left)
+       (on goal=? disjunction-right))
+      (conjoin
+       (on and-proc unification?)
+       (on equal? unification-lhs)
+       (on equal? unification-rhs))
+      (conjoin
+       (on and-proc call?)
+       (on equal? call-arguments)
+       (on eq? call-target))
+      (conjoin
+       (on and-proc delay?)
+       (on goal=? (lambda (x) (x)) delay-cont))))))
