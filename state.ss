@@ -5,7 +5,7 @@
           state-subst state-subst-update state-subst-set
           state-lookup state-extend
           state->goal state=?
-          reify)
+          reify-query)
   (import (rnrs) (chrKanren utils) (chrKanren subst))
 
   (define-record-type state
@@ -33,5 +33,8 @@
   (define (state=? state1 state2)
     (subst=? (state-subst state1) (state-subst state2)))
 
-  (define (reify vars state)
-    (map (lambda (v) (walk* v (state-subst state))) vars)))
+  (define (reify-var var state)
+    (reify-var-subst var (state-subst state)))
+
+  (define (reify-query vars state)
+    (map (lambda (v) (reify-var v state)) vars)))

@@ -2,7 +2,8 @@
 
 (library (chrKanren subst)
   (export empty-subst extend lookup walk walk* subst->goal
-          subst=?)
+          subst=?
+          reify-var-subst)
   (import (rnrs)
           (only (srfi :1 lists) lset-union)
           (chrKanren vars) (chrKanren streams) (chrKanren goals))
@@ -64,4 +65,7 @@
     (for-all (lambda (var)
                (equal? (lookup var left)
                        (lookup var right)))
-             domain)))
+             domain))
+
+  (define (reify-var-subst var subst)
+    (walk* var subst)))
