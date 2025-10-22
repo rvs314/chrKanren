@@ -7,7 +7,6 @@
           (chrKanren streams)
           (chrKanren state)
           (chrKanren interp)
-          (chrKanren subst)
           (chrKanren vars)
           (chrKanren relation)
           (chrKanren utils)

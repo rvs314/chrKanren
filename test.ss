@@ -157,7 +157,7 @@
         (let ([vs (list var ...)]
               [rs (take-finite amt
                                (start empty-state (conj goal ...)))])
-          (map (lambda (r) (reify vs r)) rs)))))
+          (map (lambda (r) (reify-query vs r)) rs)))))
 
   (define-syntax-rule (run*-finite (var ...) goal ...)
     (run-finite +inf.0 (var ...) goal ...)))
