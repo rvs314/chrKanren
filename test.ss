@@ -5,9 +5,12 @@
           define-test test-count
           *default-test-count*
           *fail-fast*
-          *finite-step-count* mature-finite take-finite)
+          *finite-step-count*
+          mature-finite take-finite
+          run-finite run*-finite)
   (import (rnrs)
           (chrKanren check)
+          (chrKanren syntax)
           (chrKanren utils)
           (chrKanren relation)
           (chrKanren goals)
@@ -129,15 +132,32 @@
       (check (mature? sm) "Stream is immature" strm)
       sm))
 
-  (define (take-finite strm)
-    (let loop ([strm strm]
-               [idx (*finite-step-count*)]
-               [acc '()])
-      (let ([strm* (mature-finite strm)])
-        (cond
-          [(empty? strm*)    (reverse acc)]
-          [(zero? idx)       (error 'take-finite "Stream is infinite")]
-          [(solution? strm*) (loop (solution-rest strm*)
-                                   (- idx 1)
-                                   (cons (solution-first strm*) acc))]
-          [else (error 'take-finite "Invalid stream")])))))
+  (define take-finite
+    (case-lambda
+      [(strm) (take-finite +inf.0 strm)]
+      [(cnt strm)
+       (let loop
+           ([strm strm]
+            [cnt cnt]
+            [acc '()])
+         (let ([strm* (mature-finite strm)])
+           (cond
+             [(or (zero? cnt) (empty? strm*))
+              (reverse acc)]
+             [(solution? strm*)
+              (loop (solution-rest strm*)
+                    (- cnt 1)
+                    (cons (solution-first strm*) acc))]
+             [else
+              (error 'take-finite "Invalid stream")])))]))
+
+  (define-syntax-rule (run-finite amt (var ...) goal ...)
+    (parameterize ([*var-counter* 0])
+      (fresh (var ...)
+        (let ([vs (list var ...)]
+              [rs (take-finite amt
+                               (start empty-state (conj goal ...)))])
+          (map (lambda (r) (reify vs r)) rs)))))
+
+  (define-syntax-rule (run*-finite (var ...) goal ...)
+    (run-finite +inf.0 (var ...) goal ...)))

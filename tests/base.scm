@@ -49,8 +49,7 @@
       (== zs (cons x zss))
       (appendo xss ys zss))]))
 
-#;
 (define-test test-appendo
-  (define res (run* (p q r) (appendo p q r)))
-  ())
+  (define res (run-finite 10 (p q r) (appendo p q r)))
+  res)
 
