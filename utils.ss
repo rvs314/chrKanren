@@ -9,7 +9,11 @@
           compose const conjoin disjoin on
           and-proc or-proc
           sort merge make-tree=?
-          repeatedly)
+          repeatedly
+          hashtable-ref-or-compute!
+          define/memoized using
+          add1 sub1
+          begin0)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take reduce))
@@ -129,4 +133,71 @@
     (let loop ([i 0])
       (when (< i k)
         (thnk i)
-        (loop (+ i 1))))))
+        (loop (+ i 1)))))
+
+  (define tag (list 'tag))
+
+  (define (hashtable-ref-or-compute! hashtable key on-failure)
+    (define res #f)
+    (hashtable-update! hashtable
+                       key
+                       (lambda (obj)
+                         (set! res
+                               (if (eq? obj tag)
+                                   (on-failure)
+                                   obj))
+                         res)
+                       tag)
+    res)
+
+  (define-syntax define/memoized
+    (syntax-rules (using)
+      [(define/memoized (name)
+         body body* ...)
+       (define name
+         (let ([set? #f]
+               [val  #f])
+           (lambda ()
+             (if set?
+                 val
+                 (let ([result (begin body body* ...)])
+                   (set! set? #t)
+                   (set! val result)
+                   result)))))]
+      [(define/memoized (name arg)
+         (using obj)
+         body body* ...)
+       (define name
+         (let ([the-hashtable obj])
+           (lambda (arg)
+             (hashtable-ref-or-compute!
+              the-hashtable
+              arg
+              (lambda () body body* ...)))))]
+      [(define/memoized (name arg)
+         body body* ...)
+       (define/memoized (name arg)
+         (using (make-eqv-hashtable))
+         body body* ...)]
+      [(define/memoized (name . args)
+         (using obj)
+         body body* ...)
+       (define name
+         (let ([the-hashtable obj])
+           (lambda args
+             (hashtable-ref-or-compute!
+              the-hashtable
+              args
+              (lambda () body body* ...)))))]))
+
+  (define-syntax using
+    (identifier-syntax
+     (error 'using "Invalid if used outside of a `define/memozied` block")))
+
+  (define (add1 x) (+ x 1))
+  (define (sub1 x) (- x 1))
+
+  (define-syntax-rule (begin0 v0 v ...)
+    (let ([r v0])
+      v ...
+      r)))

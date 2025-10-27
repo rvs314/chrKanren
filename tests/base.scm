@@ -5,8 +5,8 @@
         (chrKanren base)
         (chrKanren vars)
         (chrKanren state)
-        (chrKanren streams)
         (chrKanren subst)
+        (chrKanren streams)
         (chrKanren interp)
         (chrKanren unify)
         (only (srfi :1 lists) lset=))
@@ -50,6 +50,26 @@
       (appendo xss ys zss))]))
 
 (define-test test-appendo
-  (define res (run-finite 10 (p q r) (appendo p q r)))
-  res)
+  (check
+   (equal? (run*-finite () (appendo '(1 2 3) '(4 5 6) '(1 2 3 4 5 6)))
+           '(())))
 
+  (check
+   (equal? (run*-finite (p) (appendo p '(4 5 6) '(1 2 3 4 5 6)))
+           '(((1 2 3)))))
+
+  (check
+   (equal? (run*-finite (p q) (appendo p q '(1 2 3 4 5 6))) 
+           '((() (1 2 3 4 5 6))
+             ((1) (2 3 4 5 6))
+             ((1 2) (3 4 5 6))
+             ((1 2 3) (4 5 6))
+             ((1 2 3 4) (5 6))
+             ((1 2 3 4 5) (6))
+             ((1 2 3 4 5 6) ()))))
+
+  (check
+   (equal? (run-finite 3 (p q r) (appendo p q r))
+           '((() _.0 _.0)
+             ((_.0) _.1 (_.0 . _.1))
+             ((_.0 _.1) _.2 (_.0 _.1 . _.2))))))

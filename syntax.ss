@@ -10,14 +10,15 @@
           (chrKanren vars)
           (chrKanren relation)
           (chrKanren utils)
+          (chrKanren reifier)
           (srfi :39 parameters))
 
   (define-syntax-rule (run amt (var ...) goal ...)
     (parameterize ([*var-counter* 0])
       (fresh (var ...)
-        (let ([vs (list var ...)]
-              [rs (take amt (start empty-state (conj goal ...)))])
-          (map (lambda (r) (reify-query vs r)) rs)))))
+        (let* ([vs (list var ...)]
+               [rs (take amt (start empty-state (conj goal ...)))])
+          (map (lambda (r) (reify (reify-query vs r))) rs)))))
 
   (define-syntax-rule (run* (var ...) goal ...)
     (run +inf.0 (var ...) goal ...))
@@ -25,11 +26,14 @@
   (define-syntax-rule (conde [conjunct ...] ...)
     (disj (conj conjunct ...) ...))
 
-  (define-syntax-rule (fresh (var-name ...)
-                        body body* ...)
-    (let ([var-name (make-var 'var-name)]
-          ...)
-      (conj body body* ...)))
+  (define-syntax fresh
+    (syntax-rules ()
+      [(fresh (var-name ...) body)
+       (let ([var-name (make-var 'var-name)]
+             ...)
+         body)]
+      [(fresh (var-name ...) body body* ...)
+       (fresh (var-name ...) (conj body body* ...))]))
 
   (define-syntax-rule (define-relation (name arg ...)
                         body body* ...)

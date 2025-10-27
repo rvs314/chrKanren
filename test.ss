@@ -15,6 +15,7 @@
           (chrKanren relation)
           (chrKanren goals)
           (chrKanren vars)
+          (chrKanren reifier)
           (chrKanren interp)
           (chrKanren state)
           (chrKanren subst)
@@ -125,7 +126,7 @@
        (define-test (name)
          body body* ...)]))
 
-  (define *finite-step-count* (make-parameter 300))
+  (define *finite-step-count* (make-parameter 30000))
 
   (define (mature-finite strm)
     (let ([sm (mature strm (*finite-step-count*))])
@@ -157,7 +158,7 @@
         (let ([vs (list var ...)]
               [rs (take-finite amt
                                (start empty-state (conj goal ...)))])
-          (map (lambda (r) (reify-query vs r)) rs)))))
+          (map (lambda (r) (reify (reify-query vs r))) rs)))))
 
   (define-syntax-rule (run*-finite (var ...) goal ...)
     (run-finite +inf.0 (var ...) goal ...)))

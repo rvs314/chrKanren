@@ -17,7 +17,7 @@
    Zzz delay delay? delay-cont)
 
   (import (rnrs)
-          (only (srfi :1) reduce)
+          (only (srfi :1) reduce-right)
           (chrKanren check)
           (chrKanren vars) (chrKanren utils))
 
@@ -34,7 +34,7 @@
          ((new) l r)))))
 
   (define (conj . cs)
-    (reduce make-conjunction succeed cs))
+    (reduce-right make-conjunction succeed cs))
 
   (define-record-type disjunction
     (parent goal)
@@ -47,7 +47,7 @@
          ((new) l r)))))
 
   (define (disj . cs)
-    (reduce make-disjunction fail cs))
+    (reduce-right make-disjunction fail cs))
 
   (define-record-type success
     (parent goal))

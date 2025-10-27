@@ -16,9 +16,9 @@
        (mature strm +inf.0)]
       [(strm k)
        (check (stream? strm) "Cannot mature a non-stream")
-       (cond
-         [(or (zero? k) (mature? strm)) strm]
-         [else (mature (step strm) (- k 1))])]))
+       (if (or (zero? k) (mature? strm))
+           strm
+           (mature (step strm) (- k 1)))]))
 
   (define (age strm)
     (if (mature? strm) strm (step strm)))

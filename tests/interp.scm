@@ -51,7 +51,8 @@
                          [j goal-generator]
                          [k goal-generator]
                          [s state-generator])
-  (check (result=? (take-finite (start s (disj (disj i j) k))) (take-finite (start s (disj i (disj j k)))))))
+  (check (result=? (take-finite (start s (disj (disj i j) k)))
+                   (take-finite (start s (disj i (disj j k)))))))
 
 (define-test (conj-commutative [j goal-generator]
                                [k goal-generator]
