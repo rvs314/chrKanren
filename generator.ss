@@ -14,7 +14,6 @@
           (chrKanren goals)
           (chrKanren streams)
           (chrKanren vars)
-          (chrKanren subst)
           (chrKanren state)
           (srfi :39 parameters)
           (srfi :26 cut)

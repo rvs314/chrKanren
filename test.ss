@@ -18,8 +18,6 @@
           (chrKanren reifier)
           (chrKanren interp)
           (chrKanren state)
-          (chrKanren subst)
-          (chrKanren state)
           (chrKanren streams)
           (srfi :39 parameters))
 

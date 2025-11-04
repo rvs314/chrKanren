@@ -6,18 +6,18 @@
           eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
-          compose const conjoin disjoin on
+          compose const conjoin disjoin negate on
           and-proc or-proc
           sort merge make-tree=?
           repeatedly
           hashtable-ref-or-compute!
           define/memoized using
           add1 sub1
+          fixpoint
           begin0)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take reduce))
-
 
   (define (and-proc . objs)
     (reduce (lambda (x y) (and x y)) #t objs))
@@ -32,6 +32,10 @@
   (define (disjoin . fns)
     (lambda xs
       (exists (lambda (f) (apply f xs)) fns)))
+
+  (define (negate proc)
+    (lambda xs
+      (not (apply proc xs))))
 
   (define (const . xs)
     (lambda _
@@ -200,4 +204,10 @@
   (define-syntax-rule (begin0 v0 v ...)
     (let ([r v0])
       v ...
-      r)))
+      r))
+
+  (define (fixpoint step finished? start0 . start)
+    (let-values ([next (apply step start0 start)])
+      (if (apply finished? start0 (append start next))
+          (apply values next)
+          (apply fixpoint step finished? next)))))

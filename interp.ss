@@ -4,11 +4,11 @@
   (export mature age take+drop take drop step start)
 
   (import (rnrs)
-          (chrKanren check)
+          (chrKanren check) (chrKanren constraint)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
-          (chrKanren relation) (chrKanren subst)
-          (chrKanren state) (chrKanren unify))
+          (chrKanren relation)
+          (chrKanren state))
 
   (define mature
     (case-lambda
@@ -23,6 +23,7 @@
   (define (age strm)
     (if (mature? strm) strm (step strm)))
 
+  ;; State -> Goal -> Stream
   (define (start st gl)
     (cond
       [(failure? gl)     empty-stream]
@@ -39,13 +40,12 @@
        (start st (apply call-relation
                         (call-target gl)
                         (call-arguments gl)))]
-      [(unification? gl)
-       (let* ([lhs (unification-lhs gl)]
-              [rhs (unification-rhs gl)])
-         (or (unify lhs rhs st) empty-stream))]
+      [(posting? gl)
+       (constrain st (posting-constraint gl))]
       [else
        (check #f "Not sure how to start goal" st gl)]))
 
+  ;; Stream -> Stream
   (define (step strm)
     (check (stream? strm))
     (cond

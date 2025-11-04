@@ -68,3 +68,37 @@ Setting the ~SCHEME_CMD~ environment variable will change the implementation use
 #+end_src
 
 #  LocalWords:  chrKanren Chez's srfi
+
+* Constraint Handling Rules API
+
+Constraints must initially be declared using the ~define-constraint~ form:
+
+#+begin_src scheme
+  (declare-constraint (symbolo obj))
+#+end_src
+
+Once they have been declared, they can be referenced in normal clauses, which will add them as constraints:
+
+#+begin_src scheme
+  (run* (p) (symbolo p))
+  ;; => (((_.0) where (symbolo _.0)))
+  (run* () (symbolo 'symbol))
+  ;; => (())
+  (run* () (symbolo 3))
+  ;; => ()
+#+end_src
+
+They can also be given simplification procedures using rules:
+
+#+begin_src scheme
+  (define-constraint (numbero obj)
+    (holds number? obj))
+
+  (define-constraint-handling-rules
+    [(symbolo obj) (numbero obj) => fail])
+
+  (run* (p) (symbolo p) (numbero p))
+  ;; => ()
+#+end_src
+
+For more information on the syntax and semantics of constraints, see

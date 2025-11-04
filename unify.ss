@@ -1,23 +1,53 @@
 #!r6rs
 
 (library (chrKanren unify)
-  (export unify)
-  (import (rnrs) (chrKanren subst) (chrKanren state) (chrKanren streams)
-          (chrKanren vars) (chrKanren goals))
+  (export walk walk* unify)
+  (import (rnrs)
+          (chrKanren utils)
+          (chrKanren varmap)
+          (chrKanren vars))
 
-  (define (unify lhs* rhs* st)
-    (define lhs (walk lhs* (state-subst st)))
-    (define rhs (walk rhs* (state-subst st)))
-    (cond
-      [(eq? lhs rhs)  (make-singleton st)]
-      [(or (var? lhs) (var? rhs))
-       (let*-values ([(yng old) (younger+older-var lhs rhs)]
-                     [(ex) (state-extend yng old st)])
-         (if ex
-             (make-singleton ex)
-             empty-stream))]
-      [(and (pair? lhs) (pair? rhs))
-       (make-bind (unify (car lhs) (car rhs) st)
-                  (== (cdr lhs) (cdr rhs)))]
-      [(equal? lhs rhs) (make-singleton st)]
-      [else empty-stream])))
+  (define walk*
+    (case-lambda
+      [(obj vm)
+       (walk* obj vm var?)]
+      [(obj vm var?)
+       (cond
+         [(pair? obj) (cons (walk* (car obj) vm var?) (walk* (cdr obj) vm var?))]
+         [(var? obj) (walk obj vm var?)]
+         [else obj])]))
+
+  (define walk
+    (case-lambda
+      [(obj vm)
+       (walk obj vm var?)]
+      [(obj vm var?)
+       (fixpoint
+        (lambda (obj)
+          (if (var? obj)
+              (varmap-lookup obj vm)
+              obj))
+        eq?
+        obj)]))
+
+  (define unify
+    (case-lambda
+      [(lhs rhs vm)
+       (unify lhs rhs vm var?)]
+      [(lhs* rhs* vm var?)
+       (define lhs (walk lhs* vm var?))
+       (define rhs (walk rhs* vm var?))
+       (cond
+         [(eq? lhs rhs) vm]
+         [(or (var? lhs) (var? rhs))
+          (let*-values ([(to from)
+                         (if (var? lhs)
+                             (values lhs rhs)
+                             (values rhs lhs))]
+                        [(ex) (varmap-extend to from vm)])
+            ex)]
+         [(and (pair? lhs) (pair? rhs))
+          (let ([v0 (unify (car lhs) (car rhs) vm)])
+            (and v0 (unify (cdr lhs) (cdr rhs) v0)))]
+         [(equal? lhs rhs) vm]
+         [else #f])])))

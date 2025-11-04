@@ -6,4 +6,12 @@
           (chrKanren vars)
           (chrKanren syntax)
           (chrKanren goals)
-          (chrKanren relation)))
+          (chrKanren relation)
+          (chrKanren constraint))
+
+  (declare-constraint (== left right))
+  (declare-constraint (pass))
+
+  (define-constraint-handling-rules
+    [forall (l) (== l l) => (pass)]
+    [forall (p q) (== l r) (ground equal? l r) => (pass)]))

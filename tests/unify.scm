@@ -2,62 +2,38 @@
 
 (import (rnrs)
         (chrKanren utils)
+        (chrKanren test)
         (chrKanren check)
-        (chrKanren vars) (chrKanren unify)
-        (chrKanren subst) (chrKanren state)
-        (chrKanren goals)
-        (chrKanren streams) (chrKanren test)
-        (chrKanren interp)
+        (chrKanren vars)
+        (chrKanren varmap)
+        (chrKanren unify)
         (srfi :39 parameters))
 
 
 (define-test smoke-tests
   (check (equal?
-          (list empty-state)
-          (take-finite (unify 1 1 empty-state))))
-  (check (equal?
-          (list)
-          (take-finite (unify 1 2 empty-state)))))
+          empty-varmap
+          (unify 1 1 empty-varmap)))
+  (check (not (unify 1 2 empty-varmap))))
 
 (define-test var-bindings
-  (let* ([st  empty-state]
-         [p   (make-var 'p)]
-         [q   (make-var 'q)]
-         [st* (unify p q st)]
-         [_   (check (solution? st*))]
-         [st0 (solution-first st*)])
-    (check (not (eq? p q)))
-    (check (eq? p (state-lookup p st)))
-    (check (eq? q (state-lookup q st)))
-    (check (eq? q (state-lookup p st0)))
-    (check (eq? q (state-lookup q st0)))))
-
-(define-test occurs-check
-  (let* ([p   (make-var 'p)]
-         [st* (unify p (cons 1 p) empty-state)])
-    (check (empty? st*))))
+  (fresh (p q)
+    (let* ([s0 empty-varmap]
+           [s  (unify p q s0)])
+      (check (eq? p (varmap-lookup p s0)))
+      (check (eq? q (varmap-lookup q s0)))
+      (check (eq? q (varmap-lookup p s)))
+      (check (eq? q (varmap-lookup q s))))))
 
 (define-test triangular-substitution
-  (let* ([st  empty-state]
-         [p   (make-var 'p)]
-         [q   (make-var 'q)]
-         [r   (make-var 'r)]
-         [st* (take-finite (unify (list p q) (list q r) st))]
-         [_   (check (pair? st*))]
-         [st0 (car st*)])
-    (check (eq? p (state-lookup p st)))
-    (check (eq? q (state-lookup q st)))
-    (check (eq? r (state-lookup r st)))
-    (check (eq? q (state-lookup p st0)))
-    (check (eq? r (state-lookup q st0)))
-    (check (eq? r (state-lookup r st0)))))
+  (fresh (p q r)
+    (let* ([s (unify (list p q) (list q r) empty-varmap)])
+      (check (eq? q (varmap-lookup p s)))
+      (check (eq? r (varmap-lookup q s)))
+      (check (eq? r (varmap-lookup r s))))))
 
 (define-test dual-pair
-  (let* ([p   (make-var 'p)]
-         [q   (make-var 'q)]
-         [r   (make-var 'r)]
-         [st* (take-finite (unify `(,p . 1) `(2 . ,q) empty-state))]
-         [_   (check (pair? st*))]
-         [st0 (car st*)])
-    (check (equal? 2 (state-lookup p st0)))
-    (check (equal? 1 (state-lookup q st0)))))
+  (fresh (p q r)
+    (let* ([s (unify `(,p . 1) `(2 . ,q) empty-varmap)])
+      (check (equal? 2 (varmap-lookup p s)))
+      (check (equal? 1 (varmap-lookup q s))))))

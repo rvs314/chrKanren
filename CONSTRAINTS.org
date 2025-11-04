@@ -1,0 +1,29 @@
+Constraints in chrKanren are primitive objects which are a special kind of miniKanren goal. The major difference between constraints and normal goals is that constraints are solved in a bottom-up and incremental fashion, while goals are solved top-down. This means that as soon as a constraint is posted, all entailments of that constraint are generated immediately. The other major difference in constraints is that their definitions are open, meaning their interpretations can be extended at arbitrary points in time.
+
+Before a constraint can be used, we must define the functor (AKA the constraint constructor) the constraint uses:
+
+#+begin_src scheme
+  (declare-functor (symbolo obj))
+#+end_src
+
+This declares the ~symbolo~ functor, which holds if the object constrained is a symbol. That said, it currently does little, as there are no rules written for it. The following rules give it meaning:
+
+#+begin_src scheme
+  (define-constraint-handling-rules
+    [forall (x) (symbolo x) (ground (negate symbol?) x) <=> fail]
+    [forall (x) (symbolo x) (ground symbol? x) <=> succeed])
+#+end_src
+
+These read: "for any values ~x~, if there is a constraint in the store such that ~x~ must be symbol, then (respectively), if it is a ground non-symbol, fail; if it is a ground symbol, succeed". The ~<=>~ symbol denotes that the constraints on the left-hand-side not only imply those on the right, they are equivalent to those on the right, and so those on the left need not stay in the constraint store.
+
+In general the syntax of both forms is as follows:
+
+#+begin_example
+CONSTRAINT-DECLARATION ::= (declare-functor (CONSTRAINT-NAME ARG-NAME ...))
+RULE-DEFINITION        ::= (define-constraint-handling-rules RULE ...)
+RULE                   ::= [forall (VAR ...) CON ... OPERATOR RES] | [CON ... OPERATOR RES]
+OPERATOR               ::= <=> | =>
+CON                    ::= CON-APP | (var VALUE) | (ground PREDICATE VALUE ...)
+RES                    ::= CON-APP | (<- VAR VALUE) | fail | succeed
+CON-APP                ::= (CONSTRAINT-NAME VALUE ...)
+#+end_example

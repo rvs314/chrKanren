@@ -7,19 +7,19 @@
    conjunction conj conjunction? conjunction-left conjunction-right
    disj disjunction disjunction? disjunction-left disjunction-right
 
-   make-call call call? call-target call-arguments
+   call make-call call? call-target call-arguments
 
    fail         failure     failure?
    succeed      success     success?
 
-   == unification unification? unification-lhs unification-rhs
+   posting post posting? posting-constraint
 
    Zzz delay delay? delay-cont)
 
   (import (rnrs)
           (only (srfi :1) reduce-right)
           (chrKanren check)
-          (chrKanren vars) (chrKanren utils))
+          (chrKanren utils))
 
   (define-record-type goal)
 
@@ -64,10 +64,10 @@
     (sealed #t)
     (fields target arguments))
 
-  (define-record-type (unification == unification?)
+  (define-record-type (posting post posting?)
     (parent goal)
     (sealed #t)
-    (fields lhs rhs))
+    (fields constraint))
 
   (define-record-type delay
     (parent goal)
@@ -91,9 +91,8 @@
        (on goal=? disjunction-left)
        (on goal=? disjunction-right))
       (conjoin
-       (on and-proc unification?)
-       (on equal? unification-lhs)
-       (on equal? unification-rhs))
+       (on and-proc posting?)
+       (on equal? posting-constraint))
       (conjoin
        (on and-proc call?)
        (on equal? call-arguments)
