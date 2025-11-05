@@ -10,33 +10,62 @@
           (chrKanren goals)
           (chrKanren constraint)
           (chrKanren streams)
+          (racket trace)
           (chrKanren unify)
           (chrKanren vars)
           (chrKanren varmap))
 
   (define-record-type state
-    (fields subst facts))
+    (fields subst facts)
+    (protocol
+     (lambda (new)
+       (lambda (subst facts)
+         ;; TODO: make an abstract rep for varmaps
+         (check (list? subst))
+         (check (list? facts))
+         (new subst facts)))))
 
   (define empty-state
     (make-state empty-varmap '()))
 
-  ;; State -> (or Constraint (Listof Constraint)) -> Stream
-  (define (constrain state cs)
-    (let ([cs (if (constraint? cs) (list cs) cs)])
-      (check (state? state))
-      (check (for-all constraint? cs))
+  ;; State -> Constraint -> (Var -> Bool) -> (Listof Varmap)
+  ;; For a given state and a constraint, what variable maps
+  ;; currently hold in the system?
+  (define (constraint-holds? state constraint metavar?)
+    (check (constraint? constraint))
+    (check (state? state))
+    (cond
+      [(debug? constraint)
+       (puts state)
+       (list (state-subst state))]
+      [(scheme-check? constraint)
+       (let-values ([(pred . objs) (apply values (constraint-operands constraint))])
+         (if (apply pred (walk* objs (state-subst state)))
+             (list (state-subst state))
+             '()))]
+      [(assignment? constraint)
+       (let*-values ([(lhs rhs) (apply values (constraint-operands constraint))]
+                     [(vm1) (unify lhs rhs (state-subst state) metavar?)])
+         (if vm1 (list vm1) '()))]
+      [else
+       (filter-map (lambda (other)
+                     (unify-constraint constraint other (state-subst state) metavar?))
+                   (state-facts state))]))
 
-      (let*-values ([(assignments constraints)
-                     (partition assignment? cs)]
-                    [(facts) (append constraints (state-facts state))]
-                    [(subst) (varmap-extend-all (map
-                                                 (lambda (as)
-                                                   (cons (car (constraint-operands as))
-                                                         (cadr (constraint-operands as))))
-                                                 assignments)
-                                                (state-subst state))]
-                    [(state1) (make-state subst facts)])
-        (propagate-constraints state1))))
+  ;; State -> (or Constraint (Listof Constraint)) -> Stream
+  (trace-define (constrain state cs)
+    (check (state? state))
+    (let* ([cs (if (constraint? cs) (list cs) cs)]
+           [cs (filter (lambda (c) (null? (constraint-holds? state c (const #f)))) cs)])
+      (if (null? cs)
+          (make-singleton state)
+          (let*-values ([(assignments constraints) (partition assignment? cs)]
+                        [(facts) (append constraints (state-facts state))]
+                        [(subst) (varmap-extend-all
+                                  (map (compose tuple->pair constraint-operands) assignments)
+                                  (state-subst state))]
+                        [(state1) (make-state subst facts)])
+            (propagate-constraints state1)))))
 
   (define (unify-constraint lcon rcon vmap var?)
     (and (eq? (constraint-constructor lcon)
@@ -51,28 +80,13 @@
     (lambda (vr)
       (memq vr (rule-free-variables rule))))
 
-  ;; Factset -> Varmap -> Constraint -> List Varmap
-  (define (query-constraint facts vmap constraint var?)
-    (check (constraint? constraint))
-    ;; TODO: add `var?` primitive functor
-    ;; TODO: check for invalid assignment functor
-    (if (eq? (constraint-constructor constraint) ground)
-        (let-values ([(pred obj1 objs) (apply values (constraint-operands constraint))])
-          (and (not (exists var? (cons obj1 objs)))
-               (apply pred obj1 objs)
-               vmap))
-        (filter (lambda (con)
-                  (unify-constraint con
-                                    constraint
-                                    vmap
-                                    var?))
-                facts)))
-
+  ;; TODO: make this into an operator that returns a goal
   ;; Rule -> Varmap -> List Consequence
   (define (instantiate-consequences rule vmap)
     (if (find failure? (rule-consequences rule))
         (list fail)
         (filter-map
+         ;; TODO: This only considers postings
          (lambda (con)
            (and (posting? con)
                 (let ([con (posting-constraint con)])
@@ -84,16 +98,19 @@
   ;; State -> Rule -> Listof Consequence
   (define (apply-rule state rule)
     (define (find-assignment vmap prereqs)
+      (check (list? vmap))
       (check (list? prereqs))
 
       (if (null? prereqs)
           vmap
           (let* ([prereq (car prereqs)]
-                 [ps (query-constraint (state-facts state)
-                                       vmap
-                                       (posting-constraint prereq)
-                                       (rule-var? rule))])
-            (exists (lambda (as) (find-assignment as (cdr prereqs))) ps))))
+                 [ps (constraint-holds?
+                      (make-state vmap (state-facts state))
+                      (posting-constraint prereq)
+                      (rule-var? rule))])
+            (check (list? ps))
+            (check (for-all list? ps))
+            (find (lambda (as) (find-assignment as (cdr prereqs))) ps))))
     (check (state? state))
     (check (rule? rule))
 
@@ -117,14 +134,9 @@
 
   ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))
   (define (query state arguments)
-    (define (relevant? con)
-      (exists (lambda (arg)
-                (memq arg (constraint-operands con)))
-              arguments))
-
     (check (state? state))
     (check (list? arguments))
     (check (for-all var? arguments))
 
     (values (walk* arguments (state-subst state))
-            (filter relevant? (state-facts state)))))
+            (state-facts state))))

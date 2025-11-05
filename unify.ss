@@ -35,19 +35,19 @@
       [(lhs rhs vm)
        (unify lhs rhs vm var?)]
       [(lhs* rhs* vm var?)
-       (define lhs (walk lhs* vm var?))
-       (define rhs (walk rhs* vm var?))
+       (define lhs (walk lhs* vm))
+       (define rhs (walk rhs* vm))
        (cond
          [(eq? lhs rhs) vm]
          [(or (var? lhs) (var? rhs))
-          (let*-values ([(to from)
+          (let*-values ([(target value)
                          (if (var? lhs)
                              (values lhs rhs)
                              (values rhs lhs))]
-                        [(ex) (varmap-extend to from vm)])
+                        [(ex) (varmap-extend target value vm)])
             ex)]
          [(and (pair? lhs) (pair? rhs))
-          (let ([v0 (unify (car lhs) (car rhs) vm)])
-            (and v0 (unify (cdr lhs) (cdr rhs) v0)))]
+          (let ([vm0 (unify (car lhs) (car rhs) vm var?)])
+            (and vm0 (unify (cdr lhs) (cdr rhs) vm0 var?)))]
          [(equal? lhs rhs) vm]
-         [else #f])])))
+         [else (values #f)])])))

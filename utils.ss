@@ -14,7 +14,8 @@
           define/memoized using
           add1 sub1
           fixpoint
-          begin0)
+          begin0
+          tuple->pair pair->tuple)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take reduce))
@@ -210,4 +211,10 @@
     (let-values ([next (apply step start0 start)])
       (if (apply finished? start0 (append start next))
           (apply values next)
-          (apply fixpoint step finished? next)))))
+          (apply fixpoint step finished? next))))
+
+  (define (tuple->pair obj)
+    (cons (car obj) (cadr obj)))
+
+  (define (pair->tuple obj)
+    (list (car obj) (cdr obj))))
