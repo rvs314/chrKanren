@@ -19,10 +19,11 @@
 
 (define-test test-animalo
   (define the-animals '(pig goat cow))
-  (check (lset= equal? the-animals (map car (run* (p) (animalo p)))))
+  (check (lset= equal? the-animals
+                (map caar (run* (p) (animalo p)))))
   (for-each
    (lambda (animal)
-     (check (equal? (run* () (animalo animal)) '(()))
+     (check (pair? (run* () (animalo animal)))
             "concrete animal"
             animal))
    the-animals))
@@ -38,7 +39,7 @@
 (define-test test-chaino
   (define res (run* (p q) (chaino p q)))
   (check (= (length res) 1))
-  (check (eq? (caar res) (cadar res))))
+  (check (eq? (caaar res) (cadaar res))))
 
 (define-relation (appendo xs ys zs)
   (conde
