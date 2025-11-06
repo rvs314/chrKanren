@@ -4,25 +4,20 @@
         (chrKanren test)
         (chrKanren vars)
         (chrKanren state)
-        (chrKanren subst)
         (chrKanren streams)
         (chrKanren interp)
         (chrKanren unify)
-        (chrKanren goals)
-        (chrKanren constraint))
+        (chrKanren goals))
 
 
-(declare-functor (symbolo obj))
+(declare-constraint (symbolo obj))
 
 (define-test declaration-test
   (check (procedure? symbolo))
 
   (let* ([pst (symbolo 'foobar)]
          [con (posting-constraint pst)]
-         [fnc (constraint-functor con)])
+         [fnc (constraint-constructor con)])
     (check (posting? pst))
     (check (constraint? con))
-    (check (functor? fnc))
-    (check (eq? (functor-name fnc) 'symbolo))
-    (check (equal? (functor-arglist fnc) '(obj)))
-    (check (equal? (constraint-operands con) '(foobar)))))
+    (check (eq? fnc symbolo))))

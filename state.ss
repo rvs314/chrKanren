@@ -2,15 +2,15 @@
 
 (library (chrKanren state)
   (export empty-state state?
-          constrain query)
+          constrain make-state query
+          state=?)
   (import (rnrs)
           (only (srfi :1 lists) filter-map)
           (chrKanren utils)
           (chrKanren check)
           (chrKanren goals)
-          (chrKanren constraint)
+          (chrKanren rule)
           (chrKanren streams)
-          (racket trace)
           (chrKanren unify)
           (chrKanren vars)
           (chrKanren varmap))
@@ -28,6 +28,11 @@
   (define empty-state
     (make-state empty-varmap '()))
 
+  (define state=?
+    (conjoin (on and-proc state?)
+             (on equal? state-subst)
+             (on equal? state-facts)))
+
   ;; State -> Constraint -> (Var -> Bool) -> (Listof Varmap)
   ;; For a given state and a constraint, what variable maps
   ;; currently hold in the system?
@@ -39,7 +44,8 @@
        (puts state)
        (list (state-subst state))]
       [(scheme-check? constraint)
-       (let-values ([(pred . objs) (apply values (constraint-operands constraint))])
+       (let-values ([(pred . objs)
+                     (apply values (constraint-operands constraint))])
          (if (apply pred (walk* objs (state-subst state)))
              (list (state-subst state))
              '()))]
@@ -48,21 +54,26 @@
                      [(vm1) (unify lhs rhs (state-subst state) metavar?)])
          (if vm1 (list vm1) '()))]
       [else
-       (filter-map (lambda (other)
-                     (unify-constraint constraint other (state-subst state) metavar?))
-                   (state-facts state))]))
+       (filter-map
+        (lambda (other)
+          (unify-constraint constraint other (state-subst state) metavar?))
+        (state-facts state))]))
 
   ;; State -> (or Constraint (Listof Constraint)) -> Stream
-  (trace-define (constrain state cs)
+  (define (constrain state cs)
     (check (state? state))
     (let* ([cs (if (constraint? cs) (list cs) cs)]
-           [cs (filter (lambda (c) (null? (constraint-holds? state c (const #f)))) cs)])
+           [cs (filter
+                (lambda (c) (null? (constraint-holds? state c (const #f))))
+                cs)])
       (if (null? cs)
           (make-singleton state)
           (let*-values ([(assignments constraints) (partition assignment? cs)]
                         [(facts) (append constraints (state-facts state))]
                         [(subst) (varmap-extend-all
-                                  (map (compose tuple->pair constraint-operands) assignments)
+                                  (map
+                                   (compose tuple->pair constraint-operands)
+                                   assignments)
                                   (state-subst state))]
                         [(state1) (make-state subst facts)])
             (propagate-constraints state1)))))

@@ -5,7 +5,7 @@
         (chrKanren utils)
         (chrKanren interp) (chrKanren streams) (chrKanren goals)
         (chrKanren relation) (chrKanren vars) (chrKanren test)
-        (chrKanren state) (chrKanren subst)
+        (chrKanren state)
         (only (srfi :1 lists) lset=)
         (srfi :64 testing)
         (srfi :39 parameters))

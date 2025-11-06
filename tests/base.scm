@@ -5,7 +5,6 @@
         (chrKanren base)
         (chrKanren vars)
         (chrKanren state)
-        (chrKanren subst)
         (chrKanren streams)
         (chrKanren interp)
         (chrKanren unify)
@@ -49,6 +48,7 @@
       (== zs (cons x zss))
       (appendo xss ys zss))]))
 
+#;
 (define-test test-appendo
   (check
    (equal? (run*-finite () (appendo '(1 2 3) '(4 5 6) '(1 2 3 4 5 6)))

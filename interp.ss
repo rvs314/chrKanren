@@ -4,7 +4,7 @@
   (export mature age take+drop take drop step start)
 
   (import (rnrs)
-          (chrKanren check) (chrKanren constraint)
+          (chrKanren check)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
           (chrKanren relation)

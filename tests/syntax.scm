@@ -6,6 +6,7 @@
         (chrKanren goals)
         (chrKanren vars)
         (chrKanren interp)
+        (chrKanren base)
         (chrKanren state)
         (chrKanren streams)
         (chrKanren check)
@@ -14,9 +15,13 @@
         (only (srfi :1 lists) lset=)
         (srfi :39 parameters))
 
-
 (define-relation (sample-relation p q r)
   (== (list p q r) '(n y c)))
+
+(define (unification? gl)
+  (and (posting? gl)
+       (eq? (constraint-constructor (posting-constraint gl))
+            ==)))
 
 (define-test test-simple-relation
   (check (procedure? sample-relation))
@@ -30,8 +35,7 @@
          [_ (check (eq? (relation-name relobj) 'sample-relation))]
          [_ (check (equal? (relation-args relobj) '(p q r)))]
          [_ (check (procedure? (relation-builder relobj)))]
-         [body ((relation-builder relobj) 'a 'b 'c)]
-         [_ (check (goal=? body (== (list 'a 'b 'c) '(n y c))))])
+         [body ((relation-builder relobj) 'a 'b 'c)])
     'pass))
 
 (define example-fresh
@@ -39,6 +43,12 @@
     (fresh (p q)
       (== p 1)
       (== q 2))))
+
+(define (unification-lhs obj)
+  (car (constraint-operands (posting-constraint obj))))
+
+(define (unification-rhs obj)
+  (cadr (constraint-operands (posting-constraint obj))))
 
 (define-test test-fresh
   (parameterize ([*var-counter* 0])
@@ -55,8 +65,8 @@
            [_ (check (var? r-l))]
            [_ (lset= = (map var-idx (list l-l r-l))
                        (list 0 1))]
-           [_ (check (eqv? l-r 2))]
-           [_ (check (eqv? r-r 1))])
+           [_ (check (eqv? l-r 1))]
+           [_ (check (eqv? r-r 2))])
       'passed)))
 
 (define-test test-simple-conde

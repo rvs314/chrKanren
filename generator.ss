@@ -4,7 +4,7 @@
   (export random-choice weight random-case
           generator random-generator
           *default-random-size*
-          value-generator subst-generator state-generator
+          value-generator varmap-generator state-generator
           goal-generator stream-generator
           random-var)
   (import (rnrs)
@@ -14,6 +14,7 @@
           (chrKanren goals)
           (chrKanren streams)
           (chrKanren vars)
+          (chrKanren varmap)
           (chrKanren state)
           (srfi :39 parameters)
           (srfi :26 cut)
@@ -143,7 +144,9 @@
      [(x) (make-call (relation-generator x) '())]
      [(l r) (disj (goal-generator l) (goal-generator r))]
      [(l r) (conj (goal-generator l) (goal-generator r))]
-     [(l r) (== (value-generator l) (value-generator r))]))
+     ;; TODO: replace this clause with syntactic equality primitive
+     ;; and upgrade generator to include constraint calls
+     #;[(l r) (== (value-generator l) (value-generator r))]))
 
   (define stream-generator
     (random-generator
@@ -169,11 +172,13 @@
           new)
         (apply random-choice (*random-vars*))))
 
-  (define subst-generator
+  (define varmap-generator
     (random-generator
-     [()    empty-subst]
-     [(l r) (or (extend (random-var) (value-generator l) (subst-generator r))
-                (subst-generator (+ l r)))]))
+     [()    empty-varmap]
+     [(l r) (or (varmap-extend (random-var)
+                               (value-generator l)
+                               (varmap-generator r))
+                (varmap-generator (+ l r)))]))
 
   (define value-generator
     (random-generator
@@ -182,4 +187,5 @@
      [()    (random-var)]
      [(l r) (cons (value-generator l) (value-generator r))]))
 
-  (define state-generator (compose make-state subst-generator)))
+  (define (state-generator . xs)
+    (make-state (apply varmap-generator xs) '())))

@@ -1,14 +1,17 @@
 #!r6rs
 
 (library (chrKanren base)
-  (export define-relation fresh == conj disj conde succeed fail run run*)
+  (export define-relation
+          fresh == conj disj
+          conde succeed fail
+          run run*)
   (import (rnrs)
           (chrKanren vars)
           (chrKanren utils)
           (chrKanren syntax)
           (chrKanren goals)
           (chrKanren relation)
-          (chrKanren constraint))
+          (chrKanren rule))
 
   (declare-constraint (symbolo obj))
   (declare-constraint (numbero obj))
@@ -30,10 +33,10 @@
   ;; it triggers the same rule twice and (seeing no change) stops the loop.
   ;; I will probably need to avoid doing a trivial loop of constrain -> propagate -> constrain
   ;; and do something smarter
-  (define-constraint-handling-rules
-    [forall (x) (== x x) => succeed]
+  (define-rules
+    [forall (x) (== x x) <=> succeed]
     [forall (x y) (== x y) (ground number? x) (ground number? y) (ground (negate equal?) x y)
-            => fail]
-    [forall (a b c d) (== (cons a b) (cons c d)) => (== a c) (== b d)]
-    [forall (x y) (== x y) (scheme var? x) => (<- x y)]
-    [forall (x y) (== x y) (scheme var? y) => (<- y x)]))
+            <=> fail]
+    [forall (a b c d) (== (cons a b) (cons c d)) <=> (== a c) (== b d)]
+    [forall (x y) (== x y) (scheme var? x) <=> (<- x y)]
+    [forall (x y) (== x y) (scheme var? y) <=> (<- y x)]))

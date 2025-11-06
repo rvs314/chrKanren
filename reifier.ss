@@ -2,7 +2,11 @@
 
 (library (chrKanren reifier)
   (export reify reify-query)
-  (import (rnrs) (chrKanren vars) (chrKanren utils) (chrKanren state))
+  (import (rnrs)
+          (chrKanren vars)
+          (chrKanren goals)
+          (chrKanren utils)
+          (chrKanren state))
 
   (define (reify obj)
     (define var-counter 0)
@@ -16,7 +20,10 @@
         [else obj])))
 
   (define (reify-query qry st)
+    (define (reify-constraint con)
+      (cons (constraint-constructor con)
+            (constraint-operands con)))
     (let-values ([(vr cn) (query st qry)])
       (if (null? cn)
           (reify vr)
-          (reify `(,vr where ,@cn))))))
+          (reify `(,vr where ,@(map reify-constraint cn)))))))
