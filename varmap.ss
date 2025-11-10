@@ -2,26 +2,33 @@
 
 (library (chrKanren varmap)
   (export empty-varmap
+          varmap?
           varmap-lookup
           varmap-extend
           varmap-extend-all
-          varmap-update)
-  (import (rnrs) (chrKanren check) (chrKanren vars))
+          varmap-update
+          varmap->alist)
+  (import (rnrs) (chrKanren check) (chrKanren vars) (chrKanren utils))
 
-  (define empty-varmap '())
+  (define-record-type varmap (fields contents))
+
+  (define empty-varmap (make-varmap '()))
 
   (define (varmap-lookup key vmap)
-    (check (list? vmap))
-    (let ([rs (assq key vmap)])
+    (check (varmap? vmap))
+    (let ([rs (assq key (varmap-contents vmap))])
       (if rs
           (cdr rs)
           key)))
 
   (define (varmap-extend key value vmap)
-    (cons (cons key value) vmap))
+    (check (varmap? vmap))
+    (make-varmap (cons (cons key value) (varmap-contents vmap))))
 
   (define (varmap-extend-all alist vmap)
     (fold-left (lambda (acc k.v) (varmap-extend (car k.v) (cdr k.v) acc)) vmap alist))
 
   (define (varmap-update key fn vmap)
-    (varmap-extend key (fn (varmap-lookup key vmap)) vmap)))
+    (varmap-extend key (fn (varmap-lookup key vmap)) vmap))
+
+  (define varmap->alist varmap-contents))

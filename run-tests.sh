@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TEST_FILES=$(find ./tests -maxdepth 1 -type f) 
+TEST_FILES=$(find ./tests -type f -name *.scm) 
 
 if [ -z "$SCHEME_CMD" ]; then
     SCHEME_CMD="chezscheme --libdirs .. --script"

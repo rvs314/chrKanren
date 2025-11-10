@@ -3,7 +3,7 @@
 (library (chrKanren vars)
   (export *var-counter*
           var var-name make-var var? var-idx
-          fresh)
+          fresh var<=?)
 
   (import (rnrs)
           (chrKanren utils)
@@ -16,6 +16,7 @@
         (assertion-violation '*var-counter*
                              "counter must be a natural number"
                              x)))
+
 
   (define *var-counter* (make-parameter 0 assert-natural))
 
@@ -34,4 +35,6 @@
      (lambda (new)
        (lambda (name)
          (*var-counter* (+ 1 (*var-counter*)))
-         (new name (- (*var-counter*) 1)))))))
+         (new name (- (*var-counter*) 1))))))
+
+  (define var<=? (on <= var-idx)))

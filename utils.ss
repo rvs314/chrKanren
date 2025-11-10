@@ -3,19 +3,27 @@
 (library (chrKanren utils)
   (export define-syntax-rule
           TODO
+          atom?
           eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin negate on
           and-proc or-proc
-          sort merge make-tree=?
+          sort merge make-tree=? make-tree-compare
           repeatedly
           hashtable-ref-or-compute!
+          make-equal-hashtable
+          hashtable->alist
           define/memoized using
           add1 sub1
           fixpoint
           begin0
-          tuple->pair pair->tuple)
+          treeof pairof listof
+          tuple->pair pair->tuple
+          symbol
+          prioritize-comparators order->comparator comparator->order
+          group-by
+          single-out)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take reduce))
@@ -134,6 +142,22 @@
               (apply (make-tree=? elem=?) (map cdr lists)))]
         [else (apply elem=? lists)])))
 
+  (define (make-tree-compare elem-compare)
+    (lambda (l1 l2)
+      (cond
+        [(and (null? l1) (null? l2)) '=]
+        [(and (null? l1) (pair? l2)) '<]
+        [(and (pair? l1) (null? l2)) '>]
+        [(and (pair? l1) (pair? l2))
+         (let* ([tc (make-tree-compare elem-compare)]
+                [o1 (tc (car l1) (car l2))])
+           (if (eq? o1 '=)
+               (tc (cdr l1) (cdr l2))
+               o1))]
+        [(or (null? l1) (pair? l1)) '>]
+        [(or (null? l2) (pair? l2)) '<]
+        [else (elem-compare l1 l2)])))
+
   (define (repeatedly k thnk)
     (let loop ([i 0])
       (when (< i k)
@@ -182,7 +206,7 @@
       [(define/memoized (name arg)
          body body* ...)
        (define/memoized (name arg)
-         (using (make-eqv-hashtable))
+         (using (make-equal-hashtable))
          body body* ...)]
       [(define/memoized (name . args)
          (using obj)
@@ -195,9 +219,7 @@
               args
               (lambda () body body* ...)))))]))
 
-  (define-syntax using
-    (identifier-syntax
-     (error 'using "Invalid if used outside of a `define/memozied` block")))
+  (define-syntax using (syntax-rules ()))
 
   (define (add1 x) (+ x 1))
   (define (sub1 x) (- x 1))
@@ -206,6 +228,23 @@
     (let ([r v0])
       v ...
       r))
+
+  (define (pairof car? cdr?)
+    (conjoin pair?
+             (compose car? car)
+             (compose cdr? cdr)))
+
+  (define (listof elem?)
+    (disjoin null?
+             (pairof elem? (eta (listof elem?)))))
+
+  (define (treeof elem?)
+    (disjoin elem?
+             (pairof (eta (treeof elem?)) (eta (treeof elem?)))))
+
+  (define atom?
+    (disjoin null? number? string? char?
+             boolean? symbol? bytevector?))
 
   (define (fixpoint step finished? start0 . start)
     (let-values ([next (apply step start0 start)])
@@ -217,4 +256,81 @@
     (cons (car obj) (cadr obj)))
 
   (define (pair->tuple obj)
-    (list (car obj) (cdr obj))))
+    (list (car obj) (cdr obj)))
+
+  (define show
+    (case-lambda
+      [(obj mthd)
+       (call-with-string-output-port
+        (lambda (sop)
+          (mthd obj sop)))]
+      [(obj) (show obj display)]))
+
+  (define (symbol . objs)
+    (string->symbol (apply string-append (map show objs))))
+
+  (define (order->comparator predicate)
+    (lambda (l r)
+      (cond
+        [(not (predicate l r)) '>]
+        [(not (predicate r l)) '<]
+        [else                  '=])))
+
+  (define (comparator->order comp)
+    (lambda (l r)
+      (case (comp l r)
+        [(< =) #t]
+        [(>)   #f]
+        [else (error 'comparator->order "Not an order" comp)])))
+
+  (define (prioritize-comparators . os)
+    (if (null? os)
+        (const '=)
+        (lambda (x y)
+          (let* ([o  (car os)]
+                 [r  (o x y)]
+                 [os (cdr os)])
+            (if (eq? r '=)
+                ((apply prioritize-comparators os) x y)
+                r)))))
+
+  (define (prioritize o1 . os)
+    (lambda (x y)
+      (let ([-> (and (o1 x y) #t)]
+            [<- (and (o1 y x) #t)])
+        (cond
+          [(eq? -> <-)      ((apply prioritize os) x y)]
+          [(and -> (not <-)) #t]
+          [(and (not ->) <-) #f]
+          [else (error 'prioritize "Impossible")]))))
+
+  (define (hashtable->alist ht)
+    (unless (hashtable? ht)
+      (error 'hashtable->alist "hashtable->alist argument must be a hashtable" ht))
+    (let-values ([(v1 v2) (hashtable-entries ht)])
+      (map cons (vector->list v1) (vector->list v2))))
+
+  (define make-equal-hashtable
+    (case-lambda
+      [(size) (make-hashtable equal-hash equal? size)]
+      [() (make-hashtable equal-hash equal?)]))
+
+  (define (group-by proj objs)
+    (hashtable->alist
+     (fold-left
+      (lambda (acc obj)
+        (let-values ([(key val)
+                      (call-with-values
+                       (lambda () (proj obj))
+                       (case-lambda
+                         [(f)   (values f obj)]
+                         [(f g) (values f g)]))])
+          (hashtable-update! acc key (lambda (x) (cons val x)) '())
+          acc))
+      (make-equal-hashtable)
+      objs)))
+
+  (define (single-out obj)
+    (if (and (list? obj) (= 1 (length obj)))
+        (car obj)
+        obj)))

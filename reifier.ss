@@ -3,15 +3,18 @@
 (library (chrKanren reifier)
   (export reify reify-query)
   (import (rnrs)
+          (only (srfi :1 lists) list-index delete-duplicates)
           (chrKanren vars)
+          (chrKanren compare)
           (chrKanren goals)
+          (chrKanren vars)
           (chrKanren utils)
           (chrKanren state))
 
   (define (reify obj)
     (define var-counter 0)
-    (define/memoized (name _)
-      (begin0 (string->symbol (string-append "_." (number->string var-counter)))
+    (define/memoized (name vr)
+      (begin0 (symbol "_." var-counter)
         (set! var-counter (+ 1 var-counter))))
     (let loop ([obj obj])
       (cond
@@ -21,9 +24,13 @@
 
   (define (reify-query qry st)
     (define (reify-constraint con)
-      (cons (constraint-constructor con)
-            (constraint-operands con)))
+      (apply (constraint-reifier con) (constraint-operands con)))
+
     (let-values ([(vr cn) (query st qry)])
+      (define vs (if (= 1 (length vr)) (car vr) vr))
       (if (null? cn)
-          (reify vr)
-          (reify `(,vr where ,@(map reify-constraint cn)))))))
+          (reify vs)
+          (let* ([c0 (map reify-constraint cn)]
+                 [c1 (map lex-sort (group-by car+cdr c0))]
+                 [c2 (reify (cons vs (map delete-duplicates c1)))])
+            c2)))))

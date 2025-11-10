@@ -4,11 +4,11 @@
   (export
    goal goal? goal=?
 
-   declare-constraint
+   define-constraint
    constraint make-constraint constraint?
-   constraint-constructor constraint-operands
+   constraint-constructor constraint-reifier constraint-operands
 
-   <- scheme assignment? scheme-check? debug debug?
+   <- scheme assignment? scheme-check?
 
    conjunction conj conjunction? conjunction-left conjunction-right
    disj disjunction disjunction? disjunction-left disjunction-right
@@ -84,7 +84,7 @@
     (make-delay (lambda () body ...)))
 
   (define-record-type constraint
-    (fields constructor operands))
+    (fields constructor reifier operands))
 
   (define-syntax dotted-list-helper
     (syntax-rules ()
@@ -100,15 +100,16 @@
       [(dotted-list foo)
        (dotted-list-helper () foo)]))
 
-  (define-syntax-rule (declare-constraint (constructor . arglist) ...)
-    (begin (define (constructor . arglist)
-             (post (make-constraint constructor (dotted-list arglist))))
-           ...))
+  (define-syntax-rule (define-constraint (constructor . arglist) body ...)
+    (define (constructor . arglist)
+      (post (make-constraint constructor
+                               (lambda arglist body ...)
+                             (dotted-list arglist)))))
 
-  (declare-constraint
-   (<- vr val)
-   (scheme pred obj . objs)
-   (debug . xs))
+  (define-constraint (<- vr val)
+    (error '<- "This should never reify"))
+  (define-constraint (scheme pred obj . objs)
+    (error 'scheme "This should never reify"))
 
   (define (assignment? con)
     (and (constraint? con)
@@ -117,10 +118,6 @@
   (define (scheme-check? con)
     (and (constraint? con)
          (eq? (constraint-constructor con) scheme)))
-
-  (define (debug? con)
-    (and (constraint? con)
-         (eq? (constraint-constructor con) debug)))
 
   (define constraint=?
     (conjoin

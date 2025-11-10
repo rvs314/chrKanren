@@ -2,11 +2,11 @@
 
 (library (chrKanren constraint)
   (export
-   declare-constraint
+   define-constraint
           constraint make-constraint constraint?
-          constraint-constructor constraint-operands
+          constraint-constructor constraint-reifier constraint-operands
 
-          <- scheme assignment? scheme-check? debug debug?)
+          <- scheme assignment? scheme-check?)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren goals)
@@ -14,7 +14,7 @@
 
   ;; TODO, make constraint operators into goal and remove `posting` hack
   (define-record-type constraint
-    (fields constructor operands))
+    (fields constructor reifier operands))
 
   (define-syntax dotted-list-helper
     (syntax-rules ()
@@ -30,15 +30,16 @@
       [(dotted-list foo)
        (dotted-list-helper () foo)]))
 
-  (define-syntax-rule (declare-constraint (constructor . arglist) ...)
-    (begin (define (constructor . arglist)
-             (post (make-constraint constructor (dotted-list arglist))))
-           ...))
+  (define-syntax-rule (define-constraint (constructor . arglist) reifier-body ...)
+    (define (constructor . arglist)
+      (post (make-constraint constructor
+                             (lambda arglist reifier-body ...)
+                             (dotted-list arglist)))))
 
-  (declare-constraint
-   (<- vr val)
-   (scheme pred obj . objs)
-   (debug . xs))
+  (define-constraint (<- vr val)
+    (error '<- "Should never reify"))
+  (define-constraint (scheme pred obj . objs)
+    (error 'scheme "Should never reify"))
 
   (define (assignment? con)
     (and (constraint? con)
@@ -46,8 +47,4 @@
 
   (define (scheme-check? con)
     (and (constraint? con)
-         (eq? (constraint-constructor con) scheme)))
-
-  (define (debug? con)
-    (and (constraint? con)
-         (eq? (constraint-constructor con) debug))))
+         (eq? (constraint-constructor con) scheme))))

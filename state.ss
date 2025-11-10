@@ -1,12 +1,14 @@
 #!r6rs
 
 (library (chrKanren state)
-  (export empty-state state?
+  (export empty-state state state?
           constrain make-state query
-          state=?)
+          state=? state-facts state-subst)
   (import (rnrs)
           (only (srfi :1 lists) filter-map)
+          (srfi :2 and-let*)
           (chrKanren utils)
+          (racket trace)
           (chrKanren check)
           (chrKanren goals)
           (chrKanren rule)
@@ -20,8 +22,7 @@
     (protocol
      (lambda (new)
        (lambda (subst facts)
-         ;; TODO: make an abstract rep for varmaps
-         (check (list? subst))
+         (check (varmap? subst))
          (check (list? facts))
          (new subst facts)))))
 
@@ -33,30 +34,34 @@
              (on equal? state-subst)
              (on equal? state-facts)))
 
-  ;; State -> Constraint -> (Var -> Bool) -> (Listof Varmap)
-  ;; For a given state and a constraint, what variable maps
-  ;; currently hold in the system?
-  (define (constraint-holds? state constraint metavar?)
+  ;; State -> Constraint -> (Var -> Bool)
+  ;;   -> (Listof Constraint)
+  ;;   -> (Listof (Cons Varmap Constraint))
+  ;; For a given state and a constraint with metalogical variables satisfying
+  ;; a given predicate which are not in the nogood list,
+  ;; return: the set of "ground" varmaps which satisfy the constraint
+  ;;         their witnesses in the database.
+  (define (query-constraint state constraint metavar? nogood)
     (check (constraint? constraint))
     (check (state? state))
+    (check (procedure? metavar?))
     (cond
-      [(debug? constraint)
-       (puts state)
-       (list (state-subst state))]
       [(scheme-check? constraint)
        (let-values ([(pred . objs)
                      (apply values (constraint-operands constraint))])
          (if (apply pred (walk* objs (state-subst state)))
-             (list (state-subst state))
+             (list (cons (state-subst state) constraint))
              '()))]
       [(assignment? constraint)
        (let*-values ([(lhs rhs) (apply values (constraint-operands constraint))]
                      [(vm1) (unify lhs rhs (state-subst state) metavar?)])
-         (if vm1 (list vm1) '()))]
+         (if vm1 (list (cons vm1 constraint)) '()))]
       [else
        (filter-map
         (lambda (other)
-          (unify-constraint constraint other (state-subst state) metavar?))
+          (and-let* ([_ (not (member other nogood))]
+                     [vm (unify-constraint constraint other (state-subst state) metavar?)])
+            (cons vm other)))
         (state-facts state))]))
 
   ;; State -> (or Constraint (Listof Constraint)) -> Stream
@@ -64,20 +69,26 @@
     (check (state? state))
     (let* ([cs (if (constraint? cs) (list cs) cs)]
            [cs (filter
-                (lambda (c) (null? (constraint-holds? state c (const #f))))
+                (lambda (c)
+                  (null? (query-constraint state c (const #f) '())))
                 cs)])
+      (let loop ([state state]))
       (if (null? cs)
           (make-singleton state)
-          (let*-values ([(assignments constraints) (partition assignment? cs)]
-                        [(facts) (append constraints (state-facts state))]
-                        [(subst) (varmap-extend-all
-                                  (map
-                                   (compose tuple->pair constraint-operands)
-                                   assignments)
-                                  (state-subst state))]
+          (let*-values ([(assignments constraints)
+                         (partition assignment? cs)]
+                        [(facts)
+                         (append constraints (state-facts state))]
+                        [(subst)
+                         (varmap-extend-all
+                          (map
+                           (compose tuple->pair constraint-operands)
+                           assignments)
+                          (state-subst state))]
                         [(state1) (make-state subst facts)])
             (propagate-constraints state1)))))
 
+  ;; Constraint -> Constraint -> Varmap -> Var? -> (or Varmap #f)
   (define (unify-constraint lcon rcon vmap var?)
     (and (eq? (constraint-constructor lcon)
               (constraint-constructor rcon))
@@ -91,63 +102,114 @@
     (lambda (vr)
       (memq vr (rule-free-variables rule))))
 
-  ;; TODO: make this into an operator that returns a goal
   ;; Rule -> Varmap -> List Consequence
   (define (instantiate-consequences rule vmap)
     (if (find failure? (rule-consequences rule))
         (list fail)
         (filter-map
          ;; TODO: This only considers postings
-         (lambda (con)
-           (and (posting? con)
-                (let ([con (posting-constraint con)])
+         (lambda (consequence)
+           (and (posting? consequence)
+                (let* ([con (posting-constraint consequence)])
                   (make-constraint
                    (constraint-constructor con)
+                   (constraint-reifier con)
                    (walk* (constraint-operands con) vmap (rule-var? rule))))))
          (rule-consequences rule))))
 
-  ;; State -> Rule -> Listof Consequence
+  ;; State -> List Constraint -> State
+  (define (retract state witnesses)
+    (check (state? state))
+    (check ((listof constraint?) witnesses))
+    (make-state
+     (state-subst state)
+     (filter (lambda (c) (not (memq c witnesses)))
+             (state-facts state))))
+
+  #;(-> State Rule (or #f (Pairof)))
   (define (apply-rule state rule)
-    (define (find-assignment vmap prereqs)
-      (check (list? vmap))
-      (check (list? prereqs))
+    #;(-> Varmap
+          (Listof Posting)
+          (or #f (Pairof Varmap (Listof Constraint))))
+    (define (find-assignment vmap prereqs seen)
+      (check (varmap? vmap) "find-assignment")
+      (check ((listof posting?) prereqs))
 
       (if (null? prereqs)
-          vmap
+          (cons vmap '())
           (let* ([prereq (car prereqs)]
-                 [ps (constraint-holds?
-                      (make-state vmap (state-facts state))
-                      (posting-constraint prereq)
-                      (rule-var? rule))])
-            (check (list? ps))
-            (check (for-all list? ps))
-            (find (lambda (as) (find-assignment as (cdr prereqs))) ps))))
+                 [potential-inst (query-constraint
+                                  (make-state vmap (state-facts state))
+                                  (posting-constraint prereq)
+                                  (rule-var? rule)
+                                  seen)])
+            (exists (lambda (varmap.witness)
+                      (check ((pairof varmap? constraint?)
+                              varmap.witness))
+                      (and-let* ([witness (cdr varmap.witness)]
+                                 [varmap (car varmap.witness)]
+                                 [varmap^.witnesses
+                                  (find-assignment varmap
+                                                   (cdr prereqs)
+                                                   (cons witness seen))])
+                        (cons (car varmap^.witnesses)
+                              (cons witness (cdr varmap^.witnesses)))))
+                    potential-inst))))
     (check (state? state))
     (check (rule? rule))
 
-    (let ([as (find-assignment (state-subst state) (rule-prereqs rule))])
-      (if as
-          (instantiate-consequences rule as)
-          '())))
+    (let ([as (find-assignment
+               (state-subst state)
+               (rule-prereqs rule)
+               '())])
+      (and as (cons (instantiate-consequences rule (car as))
+                    (cdr as)))))
 
   ;; State -> Stream
-  (define (propagate-constraints state)
+  (trace-define (propagate-constraints state)
     (check (state? state))
-    (or (exists (lambda (rule)
-                  (check (rule? rule))
-                  (let ([ap (apply-rule state rule)])
-                   (cond
-                     [(exists failure? ap) empty-stream]
-                     [(null? ap) #f]
-                     [else (constrain state ap)])))
-                (*constraint-handling-rules*))
+    (or (exists
+         (lambda (rule)
+           (check (rule? rule))
+           (and-let* ([consequences.witnesses (apply-rule state rule)]
+                      [consequences (car consequences.witnesses)]
+                      [witnesses (cdr consequences.witnesses)])
+             (if (find failure? consequences)
+                 empty-stream
+                 (constrain (retract state witnesses) consequences))))
+         (*constraint-handling-rules*))
         (make-singleton state)))
+
+  (define (contains? needle haystack)
+    (or (equal? needle haystack)
+        (and (pair? haystack)
+             (or (contains? needle (car haystack))
+                 (contains? needle (cdr haystack))))))
+
+  (define (free-variables obj)
+    (cond
+      [(var? obj) (list obj)]
+      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
+      [else '() ]))
 
   ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))
   (define (query state arguments)
+    (define (relevant? vars)
+      (lambda (fact)
+        (exists (lambda (arg) (exists (lambda (op) (contains? arg op))
+                                      (constraint-operands fact)))
+                vars)))
+    (define (walk*-arguments con)
+      (check (constraint? con))
+      (make-constraint (constraint-constructor con)
+                       (constraint-reifier con)
+                       (map (lambda (a) (walk* a (state-subst state)))
+                            (constraint-operands con))))
     (check (state? state))
-    (check (list? arguments))
-    (check (for-all var? arguments))
+    (check ((listof var?) arguments))
 
-    (values (walk* arguments (state-subst state))
-            (state-facts state))))
+    (let* ([term      (walk* arguments (state-subst state))]
+           [variables (free-variables term)]
+           [facts     (filter (relevant? variables) (state-facts state))])
+      (values term
+              (map walk*-arguments facts)))))

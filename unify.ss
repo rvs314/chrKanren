@@ -14,7 +14,11 @@
       [(obj vm var?)
        (cond
          [(pair? obj) (cons (walk* (car obj) vm var?) (walk* (cdr obj) vm var?))]
-         [(var? obj) (walk obj vm var?)]
+         [(var? obj)
+          (let ([rs (walk obj vm var?)])
+            (if (var? rs)
+                rs
+                (walk* rs vm var?)))]
          [else obj])]))
 
   (define walk
@@ -50,4 +54,4 @@
           (let ([vm0 (unify (car lhs) (car rhs) vm var?)])
             (and vm0 (unify (cdr lhs) (cdr rhs) vm0 var?)))]
          [(equal? lhs rhs) vm]
-         [else (values #f)])])))
+         [else #f])])))

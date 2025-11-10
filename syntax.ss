@@ -17,7 +17,7 @@
     (fresh (var ...)
       (let* ([vs (list var ...)]
              [rs (take amt (start empty-state (conj goal ...)))])
-        (map (lambda (r) (reify (reify-query vs r))) rs))))
+        (map (lambda (r) (reify-query vs r)) rs))))
 
   (define-syntax-rule (run* (var ...) goal ...)
     (run +inf.0 (var ...) goal ...))

@@ -5,6 +5,7 @@
         (chrKanren base)
         (chrKanren vars)
         (chrKanren state)
+        (chrKanren reifier)
         (chrKanren streams)
         (chrKanren interp)
         (chrKanren unify)
@@ -20,7 +21,7 @@
 (define-test test-animalo
   (define the-animals '(pig goat cow))
   (check (lset= equal? the-animals
-                (map caar (run* (p) (animalo p)))))
+                (map car (run* (p) (animalo p)))))
   (for-each
    (lambda (animal)
      (check (pair? (run* () (animalo animal)))
@@ -39,7 +40,7 @@
 (define-test test-chaino
   (define res (run* (p q) (chaino p q)))
   (check (= (length res) 1))
-  (check (eq? (caaar res) (cadaar res))))
+  (check (eq? (caar res) (cadar res))))
 
 (define-relation (appendo xs ys zs)
   (conde
@@ -49,10 +50,9 @@
       (== zs (cons x zss))
       (appendo xss ys zss))]))
 
-#;
 (define-test test-appendo
   (check
-   (equal? (run*-finite () (appendo '(1 2 3) '(4 5 6) '(1 2 3 4 5 6)))
+   (equal? (run-finite 3 () (appendo '(1 2 3) '(4 5 6) '(1 2 3 4 5 6)))
            '(())))
 
   (check
@@ -74,3 +74,4 @@
            '((() _.0 _.0)
              ((_.0) _.1 (_.0 . _.1))
              ((_.0 _.1) _.2 (_.0 _.1 . _.2))))))
+

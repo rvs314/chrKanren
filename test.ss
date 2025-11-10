@@ -124,7 +124,7 @@
        (define-test (name)
          body body* ...)]))
 
-  (define *finite-step-count* (make-parameter 30000))
+  (define *finite-step-count* (make-parameter 300))
 
   (define (mature-finite strm)
     (let ([sm (mature strm (*finite-step-count*))])
