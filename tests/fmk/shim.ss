@@ -2,25 +2,25 @@
 
 (library (chrKanren tests fmk shim)
   (export test defrel)
-  (import (rnrs) (rnrs eval) (chrKanren utils) (chrKanren base) (chrKanren check) (chrKanren test))
+  (import (rnrs)
+          (chrKanren utils)
+          (chrKanren base)
+          (chrKanren check)
+          (chrKanren test))
 
-  (define-syntax-rule (test nm operation result)
-    (define-test check-test
-      (check (equal? operation result) nm)))
+  (define-syntax test
+    (lambda (stx)
+      (syntax-case stx ()
+        [(test nm operation result)
+         (let ([new-name
+                (cond [(string? (syntax->datum #'nm))
+                       (datum->syntax #'test
+                                      (string->symbol
+                                       (syntax->datum #'nm)))]
+                      [(identifier? #'nm) #'nm]
+                      [else #'check-test])])
+           #`(define-test #,new-name
+               (check (equal? operation result) nm)))])))
 
   (define-syntax-rule (defrel arg ...)
     (define-relation arg ...)))
-
-  ;; (define-syntax run*-shim
-  ;;   (syntax-rules ()
-  ;;     [(run*-shim (r v vs ...) q ...)
-  ;;      (run* (r v vs ...) q ...)]
-  ;;     [(run*-shim (v) q ...)
-  ;;      (map car (run* (v) q ...))]))
-
-  ;; (define-syntax run-shim
-  ;;   (syntax-rules ()
-  ;;     [(run-shim k (r v vs ...) q ...)
-  ;;      (run k (r v vs ...) q ...)]
-  ;;     [(run-shim k (v) q ...)
-  ;;      (map car (run k (v) q ...))])))

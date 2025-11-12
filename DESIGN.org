@@ -27,8 +27,7 @@ Currently, rather than using explicit unification/type-constraint goal, I use a 
 
 Addendum: I've given up on this goal, unfortunately. I may go back and re-implement something like this, but it seems silly to force our otherwise first-order implementation to have a singular higher-order goal.
 
-Further Addendum: This is actually just not feasible in general. We need some level of
-unification in order to support CHR. See [[Unification, This Time With Feeling!]]
+Further Addendum: This is actually just not feasible in general. We need some level of unification in order to support CHR. See [[Unification, This Time With Feeling!]]
 
 * Randomized Testing
 
@@ -43,7 +42,7 @@ The way I currently have the system implemented is as follows:
 - I have a primitive "assignment" constraint called ~<-~ which binds a value to a fresh logic variable
 - I have a user-level constraint called ~==~ which re-implements unification. It also currently doesn't work, as we need to be able to remove constraints to prevent infinite loops.
 
-I think this system is dumb. I want to replace ~<-~ with a primitive "syntactic unification" constraint called ~===~, then a user-level ~==~ which has the rule ~(\=\= x x) <=> succeed~.
+I think this system is dumb. I want to replace ~<-~ with a primitive "syntactic unification" constraint called ~===~, then a user-level ~==~ which has the rule ~(\=\= x x) <=> succeed~. The other question that arises is how do remove unification constraints that obviously fail? We currently repeat all that logic in the unification constraint itself, which isn't great.
 
 The issue with either of these schemes is that we can't use semantic unification when unifying constraints. For example, let's say I have a ~free-varso~ constraint that describes lambda-calculus terms which have a particular set of free variables. Matching against that constraint requires semantic unification, which is itself not a constraint. I'm not going to deal with this right now, but it's on the TODO list.
 

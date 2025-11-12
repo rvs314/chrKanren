@@ -5,7 +5,6 @@
 
   (import (rnrs)
           (chrKanren check)
-          (racket trace)
           (chrKanren utils) (chrKanren vars)
           (chrKanren goals) (chrKanren streams)
           (chrKanren relation)
@@ -25,7 +24,7 @@
     (if (mature? strm) strm (step strm)))
 
   ;; State -> Goal -> Stream
-  (trace-define (start st gl)
+  (define (start st gl)
     (cond
       [(failure? gl)     empty-stream]
       [(success? gl)     (make-singleton st)]
@@ -47,7 +46,7 @@
        (check #f "Not sure how to start goal" st gl)]))
 
   ;; Stream -> Stream
-  (trace-define (step strm)
+  (define (step strm)
     (check (stream? strm))
     (cond
       [(choice? strm)

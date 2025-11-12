@@ -10,7 +10,8 @@
         (chrKanren goals))
 
 
-(declare-constraint (symbolo obj))
+(define-constraint (symbolo obj)
+  `(symbolo ,obj))
 
 (define-test declaration-test
   (check (procedure? symbolo))

@@ -8,7 +8,6 @@
           (only (srfi :1 lists) filter-map)
           (srfi :2 and-let*)
           (chrKanren utils)
-          (racket trace)
           (chrKanren check)
           (chrKanren goals)
           (chrKanren rule)
@@ -72,7 +71,6 @@
                 (lambda (c)
                   (null? (query-constraint state c (const #f) '())))
                 cs)])
-      (let loop ([state state]))
       (if (null? cs)
           (make-singleton state)
           (let*-values ([(assignments constraints)
@@ -166,7 +164,7 @@
                     (cdr as)))))
 
   ;; State -> Stream
-  (trace-define (propagate-constraints state)
+  (define (propagate-constraints state)
     (check (state? state))
     (or (exists
          (lambda (rule)

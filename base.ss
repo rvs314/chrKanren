@@ -18,10 +18,4 @@
           (chrKanren streams)
           (chrKanren prelude unification)
           (chrKanren prelude disunification)
-          (chrKanren prelude types))
-
-  (define-relation (distincto l)
-    (fresh (a)
-      (== l `(,a))))
-
-  (define gl0 (fresh (p) (distincto (list p)))))
+          (chrKanren prelude types)))

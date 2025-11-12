@@ -4,7 +4,7 @@
 This is an adaptation of the `==-tests.scm` file in Michael Ballantyne's faster-miniKanren.
 |#
 
-(import (rnrs) (except (chrKanren base) run run*) (chrKanren tests fmk shim))
+(import (rnrs) (except (chrKanren base)) (chrKanren tests fmk shim))
 
 (test "1"
   (run 1 (q) (== 5 q))

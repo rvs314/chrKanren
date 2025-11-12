@@ -8,14 +8,6 @@
           (chrKanren utils)
           (chrKanren syntax))
 
-  ;; (define-constraint (has-typeo obj typ)
-  ;;   (list typ obj))
-  ;; (define-constriant (not-typeo obj typ)
-  ;;   (list (string-append) typ))
-
-  ;; (define (symbolo x) (has-typeo x 'symbolo))
-  ;; (define (numbero x) (has-typeo x 'numbero))
-
   (define-constraint (symbolo obj) `(symbolo ,obj))
   (define-constraint (numbero obj) `(numbero ,obj))
 

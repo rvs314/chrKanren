@@ -13,8 +13,7 @@
     (error '== "Should not reify ==" left right))
 
   (define-rules
-    (forall (x)
-      (== x x))
+    (forall (x) (== x x))
     (forall (x y)
       (== x y)
       (ground atom? x)
