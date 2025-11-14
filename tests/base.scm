@@ -20,8 +20,7 @@
 
 (define-test test-animalo
   (define the-animals '(pig goat cow))
-  (check (lset= equal? the-animals
-                (map car (run* (p) (animalo p)))))
+  (check (lset= equal? the-animals (run* (p) (animalo p))))
   (for-each
    (lambda (animal)
      (check (pair? (run* () (animalo animal)))
@@ -57,7 +56,7 @@
 
   (check
    (equal? (run*-finite (p) (appendo p '(4 5 6) '(1 2 3 4 5 6)))
-           '(((1 2 3)))))
+           '((1 2 3))))
 
   (check
    (equal? (run*-finite (p q) (appendo p q '(1 2 3 4 5 6))) 

@@ -15,10 +15,10 @@
 
 (define-test Simple-extend/lookup
   (check (equal? a (lookup a empty-subst)))
-  (check (extend a 3 '()))
-  (check (equal? 3 (lookup a (extend a 3 '()))))
-  (check (equal? 3 (lookup a (extend a 3 (extend a 2 '())))))
-  (check (equal? b (lookup a (extend a b (extend a 2 '()))))))
+  (check (extend a 3 empty-varmap))
+  (check (equal? 3 (lookup a (extend a 3 empty-subst))))
+  (check (equal? 3 (lookup a (extend a 3 (extend a 2 empty-subst)))))
+  (check (equal? b (lookup a (extend a b (extend a 2 empty-subst))))))
 
 #;
 (define-test walk*?
