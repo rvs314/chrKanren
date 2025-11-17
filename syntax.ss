@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren syntax)
-  (export run run* conde define-relation)
+  (export run run-with run* conde define-relation)
   (import (rnrs)
           (chrKanren goals)
           (chrKanren streams)
@@ -13,11 +13,14 @@
           (chrKanren reifier)
           (srfi :39 parameters))
 
-  (define-syntax-rule (run amt (var ...) goal ...)
+  (define-syntax-rule (run-with take-form amt (var ...) goal ...)
     (fresh (var ...)
       (let* ([vs (list var ...)]
-             [rs (take amt (start empty-state (conj goal ...)))])
+             [rs (take-form amt (start empty-state (conj goal ...)))])
         (map (lambda (r) (reify-query vs r)) rs))))
+
+  (define-syntax-rule (run amt (var ...) goal ...)
+    (run-with take amt (var ...) goal ...))
 
   (define-syntax-rule (run* (var ...) goal ...)
     (run +inf.0 (var ...) goal ...))

@@ -5,7 +5,7 @@
           define-test test-count
           *default-test-count*
           *fail-fast*
-          *finite-step-count*
+          *finite-maturation-limit*
           mature-finite take-finite
           run-finite run*-finite)
   (import (rnrs)
@@ -124,39 +124,14 @@
        (define-test (name)
          body body* ...)]))
 
-  (define *finite-step-count* (make-parameter 300))
+  (define *finite-maturation-limit* (make-parameter 300))
 
-  (define (mature-finite strm)
-    (let ([sm (mature strm (*finite-step-count*))])
-      (check (mature? sm) "Stream is immature" strm)
-      sm))
+  (define-syntax-rule (define-finite-operator name operator)
+    (define-syntax-rule (name . arg)
+      (parameterize ([*maturation-limit* (*finite-maturation-limit*)])
+        (operator . arg))))
 
-  (define take-finite
-    (case-lambda
-      [(strm) (take-finite +inf.0 strm)]
-      [(cnt strm)
-       (let loop
-           ([strm strm]
-            [cnt cnt]
-            [acc '()])
-         (let ([strm* (mature-finite strm)])
-           (cond
-             [(or (zero? cnt) (empty? strm*))
-              (reverse acc)]
-             [(solution? strm*)
-              (loop (solution-rest strm*)
-                    (- cnt 1)
-                    (cons (solution-first strm*) acc))]
-             [else
-              (error 'take-finite "Invalid stream")])))]))
-
-  (define-syntax-rule (run-finite amt (var ...) goal ...)
-    (parameterize ([*var-counter* 0])
-      (fresh (var ...)
-        (let ([vs (list var ...)]
-              [rs (take-finite amt
-                               (start empty-state (conj goal ...)))])
-          (map (lambda (r) (reify (reify-query vs r))) rs)))))
-
-  (define-syntax-rule (run*-finite (var ...) goal ...)
-    (run-finite +inf.0 (var ...) goal ...)))
+  (define-finite-operator mature-finite mature)
+  (define-finite-operator run-finite run)
+  (define-finite-operator run*-finite run*)
+  (define-finite-operator take-finite take))

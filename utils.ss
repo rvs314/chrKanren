@@ -61,11 +61,11 @@
 
   (define-syntax define-syntax-rule
     (syntax-rules ()
-      [(define-syntax-rule (name args ...)
+      [(define-syntax-rule (name . args)
          body ...)
        (define-syntax name
          (syntax-rules ()
-           [(name args ...)
+           [(name . args)
             (begin body ...)]))]))
 
   (define-syntax-rule (eta proc)

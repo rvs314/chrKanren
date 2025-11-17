@@ -1,24 +1,28 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export mature age take+drop take drop step start)
+  (export *maturation-limit* mature age take+drop take drop step start)
 
   (import (rnrs)
           (chrKanren check)
-          (chrKanren utils) (chrKanren vars)
-          (chrKanren goals) (chrKanren streams)
+          (chrKanren utils)
+          (chrKanren vars)
+          (chrKanren goals)
+          (chrKanren streams)
           (chrKanren relation)
-          (chrKanren state))
+          (chrKanren state)
+          (srfi :39 parameters))
 
-  (define mature
-    (case-lambda
-      [(strm)
-       (mature strm +inf.0)]
-      [(strm k)
-       (check (stream? strm) "Cannot mature a non-stream")
-       (if (or (zero? k) (mature? strm))
-           strm
-           (mature (step strm) (- k 1)))]))
+
+  (define *maturation-limit* (make-parameter +inf.0))
+
+  (define (mature strm)
+    (check (stream? strm) "Cannot mature a non-stream")
+    (let loop ([strm strm] [count (*maturation-limit*)])
+      (cond
+        [(mature? strm) strm]
+        [(zero? count) (error 'mature "Stream is infinite" strm)]
+        [else (loop (step strm) (- count 1))])))
 
   (define (age strm)
     (if (mature? strm) strm (step strm)))
@@ -80,18 +84,18 @@
 
   (define take+drop
     (case-lambda
-      [(strm)
-       (take+drop +inf.0 strm)]
+      [(strm) (take+drop +inf.0 strm)]
       [(n strm)
-       (cond
-         [(or (zero? n) (empty? strm))
-          (values '() strm)]
-         [(solution? strm)
-          (let-values ([(f r) (take+drop (- n 1) (solution-rest strm))])
-            (values (cons (solution-first strm) f)
-                    r))]
-         [else
-          (take+drop n (step strm))])]))
+       (let ([strm (mature strm)])
+         (cond
+           [(or (zero? n) (empty? strm))
+            (values '() strm)]
+           [(solution? strm)
+            (let-values ([(f r) (take+drop (- n 1) (solution-rest strm))])
+              (values (cons (solution-first strm) f)
+                      r))]
+           [else
+            (error 'take+drop "Mature did not return a mature stream" strm)]))]))
 
   (define (take . ks)
     (let-values ([(f r) (apply take+drop ks)])
