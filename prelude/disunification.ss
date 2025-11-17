@@ -32,9 +32,8 @@
                       [al (varmap->alist vm)]
                       [rt (lex-sort (list (single-out (map car al))
                                           (single-out (map cdr al))))])
-             (if (equal? rt '(() ()))
-                 #f
-                 rt))))
+             (and (not (equal? rt '(() ())))
+                  rt))))
        alist))
     `(=/= ,@alist*))
 

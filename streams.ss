@@ -7,10 +7,11 @@
           make-pause    pause    pause?    pause-state pause-goal
           make-bind     bind     bind?     bind-stream bind-goal
           empty-stream  empty    empty?
+          make-propagating propagating propagating? propagating-stream
           make-singleton singleton?
           mature?)
 
-  (import (rnrs) (chrKanren check))
+  (import (rnrs) (chrKanren check) (chrKanren utils))
 
   (define-record-type stream)
 
@@ -64,12 +65,15 @@
 
   (define empty-stream (make-empty))
 
+  (define-record-type propagating
+    (parent stream)
+    (fields stream))
+
   (define (make-singleton obj)
     (make-solution obj empty-stream))
 
-  (define (singleton? obj)
-    (and (solution? obj)
-         (empty? (solution-rest obj))))
+  (define singleton?
+    (conjoin solution?
+             (compose empty? solution-rest)))
 
-  (define (mature? strm)
-    (and (or (empty? strm) (or (solution? strm))))))
+  (define mature? (disjoin empty? solution?)))

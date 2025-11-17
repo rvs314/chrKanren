@@ -143,20 +143,20 @@
         [else (apply elem=? lists)])))
 
   (define (make-tree-compare elem-compare)
-    (lambda (l1 l2)
+    (define (compare l1 l2)
       (cond
         [(and (null? l1) (null? l2)) '=]
         [(and (null? l1) (pair? l2)) '<]
         [(and (pair? l1) (null? l2)) '>]
         [(and (pair? l1) (pair? l2))
-         (let* ([tc (make-tree-compare elem-compare)]
-                [o1 (tc (car l1) (car l2))])
+         (let* ([o1 (compare (car l1) (car l2))])
            (if (eq? o1 '=)
-               (tc (cdr l1) (cdr l2))
+               (compare (cdr l1) (cdr l2))
                o1))]
         [(or (null? l1) (pair? l1)) '>]
         [(or (null? l2) (pair? l2)) '<]
-        [else (elem-compare l1 l2)])))
+        [else (elem-compare l1 l2)]))
+    compare)
 
   (define (repeatedly k thnk)
     (let loop ([i 0])

@@ -3,6 +3,7 @@
 (library (chrKanren state)
   (export empty-state state state?
           constrain make-state query
+          propagate-constraints
           state=? state-facts state-subst)
   (import (rnrs)
           (only (srfi :1 lists) filter-map)
@@ -63,16 +64,17 @@
             (cons vm other)))
         (state-facts state))]))
 
-  ;; State -> (or Constraint (Listof Constraint)) -> Stream
+  ;; State -> (or Constraint (Listof Constraint)) -> State
   (define (constrain state cs)
     (check (state? state))
+    (check ((disjoin constraint? (listof constraint?)) cs))
     (let* ([cs (if (constraint? cs) (list cs) cs)]
            [cs (filter
                 (lambda (c)
                   (null? (query-constraint state c (const #f) '())))
                 cs)])
       (if (null? cs)
-          (make-singleton state)
+          state
           (let*-values ([(assignments constraints)
                          (partition assignment? cs)]
                         [(facts)
@@ -84,7 +86,7 @@
                            assignments)
                           (state-subst state))]
                         [(state1) (make-state subst facts)])
-            (propagate-constraints state1)))))
+            state1))))
 
   ;; Constraint -> Constraint -> Varmap -> Var? -> (or Varmap #f)
   (define (unify-constraint lcon rcon vmap var?)
@@ -124,14 +126,13 @@
      (filter (lambda (c) (not (memq c witnesses)))
              (state-facts state))))
 
-  #;(-> State Rule (or #f (Pairof)))
+  ;; State -> Rule -> (or #f (Pairof Varmap (Listof Constraint)))
   (define (apply-rule state rule)
-    #;(-> Varmap
-          (Listof Posting)
-          (or #f (Pairof Varmap (Listof Constraint))))
+    ;; Varmap -> Listof Posting -> Listof Constraint -> (or #f (Pairof Varmap (Listof Constraint)))
     (define (find-assignment vmap prereqs seen)
       (check (varmap? vmap) "find-assignment")
       (check ((listof posting?) prereqs))
+      (check ((listof constraint?) seen))
 
       (if (null? prereqs)
           (cons vmap '())
@@ -142,8 +143,7 @@
                                   (rule-var? rule)
                                   seen)])
             (exists (lambda (varmap.witness)
-                      (check ((pairof varmap? constraint?)
-                              varmap.witness))
+                      (check ((pairof varmap? constraint?) varmap.witness))
                       (and-let* ([witness (cdr varmap.witness)]
                                  [varmap (car varmap.witness)]
                                  [varmap^.witnesses
@@ -174,7 +174,9 @@
                       [witnesses (cdr consequences.witnesses)])
              (if (find failure? consequences)
                  empty-stream
-                 (constrain (retract state witnesses) consequences))))
+                 (make-propagating
+                  (make-singleton
+                   (constrain (retract state witnesses) consequences))))))
          (*constraint-handling-rules*))
         (make-singleton state)))
 
@@ -188,7 +190,7 @@
     (cond
       [(var? obj) (list obj)]
       [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
-      [else '() ]))
+      [else '()]))
 
   ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))
   (define (query state arguments)

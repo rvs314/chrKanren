@@ -7,11 +7,15 @@
           (chrKanren utils)
           (chrKanren vars))
 
+  (define (boolean<=? left right)
+    (or right (not left)))
+
   (define atomic-type-table
-    `((,var?    . ,var<=?)
-      (,number? . ,<=)
-      (,string? . ,string<=?)
-      (,symbol? . ,(on string<=? symbol->string))))
+    `((,var?     . ,var<=?)
+      (,boolean? . ,boolean<=?)
+      (,number?  . ,<=)
+      (,string?  . ,string<=?)
+      (,symbol?  . ,(on string<=? symbol->string))))
 
   (define (atom-compare left right)
     (define li (list-index (lambda (entry) ((car entry) left))  atomic-type-table))

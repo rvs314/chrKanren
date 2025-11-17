@@ -42,6 +42,10 @@ This is an adaptation of the `==-tests.scm` file in Michael Ballantyne's faster-
   (run* (q) (appendo q '(d e) '(a b c d e)))
   '((a b c)))
 
+(test "6-lite"
+  (run* (q) (appendo '(1) q '(1 2)))
+  '((2)))
+
 (test "6"
   (run* (q) (appendo '(a b c) q '(a b c d e)))
   '((d e)))
