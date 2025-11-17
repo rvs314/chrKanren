@@ -5,14 +5,29 @@
 
   (import (rnrs)
           (chrKanren check)
+          (chrKanren rule)
           (chrKanren utils)
           (chrKanren vars)
           (chrKanren goals)
           (chrKanren streams)
           (chrKanren relation)
           (chrKanren state)
+          (srfi :2 and-let*)
           (srfi :39 parameters))
 
+  ;; State -> Stream
+  (define (propagate-constraints state)
+    (check (state? state))
+    (or (exists
+         (lambda (rule)
+           (check (rule? rule))
+           (and-let* ([goal.witnesses (apply-rule state rule)]
+                      [goal (car goal.witnesses)]
+                      [witnesses (cdr goal.witnesses)])
+             (make-propagating
+              (start (retract state witnesses) goal))))
+         (*constraint-handling-rules*))
+        (make-singleton state)))
 
   (define *maturation-limit* (make-parameter +inf.0))
 

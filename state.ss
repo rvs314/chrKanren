@@ -3,7 +3,7 @@
 (library (chrKanren state)
   (export empty-state state state?
           constrain make-state query
-          propagate-constraints
+          apply-rule retract
           state=? state-facts state-subst)
   (import (rnrs)
           (only (srfi :1 lists) filter-map)
@@ -102,20 +102,9 @@
     (lambda (vr)
       (memq vr (rule-free-variables rule))))
 
-  ;; Rule -> Varmap -> List Consequence
+  ;; Rule -> Varmap -> Goal
   (define (instantiate-consequences rule vmap)
-    (if (find failure? (rule-consequences rule))
-        (list fail)
-        (filter-map
-         ;; TODO: This only considers postings
-         (lambda (consequence)
-           (and (posting? consequence)
-                (let* ([con (posting-constraint consequence)])
-                  (make-constraint
-                   (constraint-constructor con)
-                   (constraint-reifier con)
-                   (walk* (constraint-operands con) vmap (rule-var? rule))))))
-         (rule-consequences rule))))
+    (apply (rule-consequences rule) (walk* (rule-free-variables rule) vmap (rule-var? rule))))
 
   ;; State -> List Constraint -> State
   (define (retract state witnesses)
@@ -126,7 +115,7 @@
      (filter (lambda (c) (not (memq c witnesses)))
              (state-facts state))))
 
-  ;; State -> Rule -> (or #f (Pairof Varmap (Listof Constraint)))
+  ;; State -> Rule -> (or #f (Pairof Goal (Listof Constraint)))
   (define (apply-rule state rule)
     ;; Varmap -> Listof Posting -> Listof Constraint -> (or #f (Pairof Varmap (Listof Constraint)))
     (define (find-assignment vmap prereqs seen)
@@ -163,23 +152,6 @@
       (and as (cons (instantiate-consequences rule (car as))
                     (cdr as)))))
 
-  ;; State -> Stream
-  (define (propagate-constraints state)
-    (check (state? state))
-    (or (exists
-         (lambda (rule)
-           (check (rule? rule))
-           (and-let* ([consequences.witnesses (apply-rule state rule)]
-                      [consequences (car consequences.witnesses)]
-                      [witnesses (cdr consequences.witnesses)])
-             (if (find failure? consequences)
-                 empty-stream
-                 (make-propagating
-                  (make-singleton
-                   (constrain (retract state witnesses) consequences))))))
-         (*constraint-handling-rules*))
-        (make-singleton state)))
-
   (define (contains? needle haystack)
     (or (equal? needle haystack)
         (and (pair? haystack)
@@ -210,6 +182,7 @@
 
     (let* ([term      (walk* arguments (state-subst state))]
            [variables (free-variables term)]
+           ;; TODO: This should probably happen as a CHR rule
            [facts     (filter (relevant? variables) (state-facts state))])
       (values term
               (map walk*-arguments facts)))))

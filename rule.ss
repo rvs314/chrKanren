@@ -26,7 +26,10 @@
        (parse-rule (vs ...) (gl ...) (<=> succeed))]
       [(parse-rule (vs ...) (gl ...) (<=> res ...))
        (fresh (vs ...)
-         (make-rule (list vs ...) (list gl ...) (list res ...)))]
+         (make-rule
+          (list vs ...)
+          (list gl ...)
+          (lambda (vs ...) (conj res ...))))]
       [(parse-rule (vs ...) (gl ...) (g₀ rest ...))
        (parse-rule (vs ...) (gl ... g₀) (rest ...))]
       [(parse-rule (forall (vs ...) rest ...))
