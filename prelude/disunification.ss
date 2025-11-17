@@ -5,6 +5,7 @@
   (import (rnrs)
           (only (srfi :1 lists) filter-map lset<=)
           (chrKanren syntax)
+          (chrKanren check)
           (chrKanren utils)
           (chrKanren vars)
           (chrKanren goals)
@@ -40,6 +41,11 @@
   (define (equal+lauqe xs ys)
     (or (equal? xs ys)
         (equal? (cons (cdr xs) (car xs)) ys)))
+
+  (define (reducible? diseq-spec)
+    (check (list? diseq-spec))
+    (exists (lambda (aq) (not (var? (car aq))))
+            diseq-spec))
 
   ;; (=/= ((A . B) (C . D) (E . F)))
   ;; Means either, A ≠ B or C ≠ D or E ≠ F
@@ -86,4 +92,11 @@
     (forall (ll lr rl rr rs)
       (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs))
       <=>
-      (=/=* (cons* (cons ll rl) (cons lr rr) rs)))))
+      (=/=* (cons* (cons ll rl) (cons lr rr) rs)))
+    #;(forall (ls vs)
+        (reifying vs)
+        (=/=* ls)
+        (ground reducible? ls)
+        <=>
+        (=/=* (reduced ls))
+        (reifying vs))))

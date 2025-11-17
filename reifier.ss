@@ -3,7 +3,7 @@
 (library (chrKanren reifier)
   (export reify reify-query)
   (import (rnrs)
-          (only (srfi :1 lists) list-index delete-duplicates)
+          (only (srfi :1 lists) list-index delete-duplicates filter-map)
           (chrKanren vars)
           (chrKanren compare)
           (chrKanren goals)
@@ -28,9 +28,9 @@
 
     (let-values ([(vr cn) (query st qry)])
       (define vs (if (= 1 (length vr)) (car vr) vr))
-      (if (null? cn)
+      (define c0 (filter-map reify-constraint cn))
+      (if (null? c0)
           (reify vs)
-          (let* ([c0 (map reify-constraint cn)]
-                 [c1 (map lex-sort (group-by car+cdr c0))]
+          (let* ([c1 (map lex-sort (group-by car+cdr c0))]
                  [c2 (reify (cons vs (map delete-duplicates c1)))])
             c2)))))

@@ -8,7 +8,7 @@
    constraint make-constraint constraint?
    constraint-constructor constraint-reifier constraint-operands
 
-   <- scheme assignment? scheme-check?
+   <- scheme assignment? scheme-check? reifying
 
    conjunction conj conjunction? conjunction-left conjunction-right
    disj disjunction disjunction? disjunction-left disjunction-right
@@ -103,13 +103,15 @@
   (define-syntax-rule (define-constraint (constructor . arglist) body ...)
     (define (constructor . arglist)
       (post (make-constraint constructor
-                               (lambda arglist body ...)
+                             (lambda arglist body ...)
                              (dotted-list arglist)))))
 
   (define-constraint (<- vr val)
     (error '<- "This should never reify"))
   (define-constraint (scheme pred obj . objs)
     (error 'scheme "This should never reify"))
+  (define-constraint (reifying query-variables)
+    #f)
 
   (define (assignment? con)
     (and (constraint? con)
