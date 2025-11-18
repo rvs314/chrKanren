@@ -60,7 +60,7 @@
                         (call-target gl)
                         (call-arguments gl)))]
       [(posting? gl)
-       (propagate-constraints (constrain st (posting-constraint gl)))]
+       (step (propagate-constraints (constrain st (posting-constraint gl))))]
       [else
        (check #f "Not sure how to start goal" st gl)]))
 
@@ -81,6 +81,8 @@
        (let ([s (age (propagating-stream strm))])
          (cond
            [(empty? s) s]
+           [(singleton? s)
+            (step (propagate-constraints (solution-first s)))]
            [(solution? s)
             (step (make-choice (propagate-constraints (solution-first s))
                                (make-propagating (solution-rest s))))]

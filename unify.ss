@@ -1,9 +1,10 @@
 #!r6rs
 
 (library (chrKanren unify)
-  (export walk walk* unify)
+  (export walk walk* unify square-varmap)
   (import (rnrs)
           (chrKanren utils)
+          (chrKanren check)
           (chrKanren varmap)
           (chrKanren vars))
 
@@ -34,6 +35,11 @@
         eq?
         obj)]))
 
+  (define (square-varmap vm)
+    (check (varmap? vm))
+    (map (lambda (k) (cons (car k) (walk* (cdr k) vm)))
+         (varmap->alist vm)))
+
   (define unify
     (case-lambda
       [(lhs rhs vm)
@@ -43,13 +49,12 @@
        (define rhs (walk rhs* vm))
        (cond
          [(eq? lhs rhs) vm]
-         [(or (var? lhs) (var? rhs))
-          (let*-values ([(target value)
-                         (if (var? lhs)
-                             (values lhs rhs)
-                             (values rhs lhs))]
-                        [(ex) (varmap-extend target value vm)])
-            ex)]
+         [(and (var? lhs) (var? rhs))
+          (if (> (var-idx lhs) (var-idx rhs))
+              (varmap-extend lhs rhs vm)
+              (varmap-extend rhs lhs vm))]
+         [(var? lhs) (varmap-extend lhs rhs vm)]
+         [(var? rhs) (varmap-extend rhs lhs vm)]
          [(and (pair? lhs) (pair? rhs))
           (let ([vm0 (unify (car lhs) (car rhs) vm var?)])
             (and vm0 (unify (cdr lhs) (cdr rhs) vm0 var?)))]

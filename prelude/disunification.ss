@@ -16,53 +16,43 @@
           (chrKanren rule)
           (chrKanren prelude types))
 
-  ;; TODO: this is a bad hack and should likely be replaced
-  (define (reified-var? obj)
-    (and (symbol? obj)
-         (let ([nm (symbol->string obj)])
-           (and (> (string-length nm) 3)
-                (string=? "_." (substring nm 0 2))))))
-
   (define-constraint (=/= _l _r) (error '=/= "Should not reify =/="))
   (define-constraint (=/=* alist)
-    (define alist*
-      (filter-map
-       (lambda (l.r)
-         (let-values ([(l r) (car+cdr l.r)])
-           (and-let* ([vm (unify l r empty-varmap)]
-                      [al (varmap->alist vm)]
-                      [rt (lex-sort (list (single-out (map car al))
-                                          (single-out (map cdr al))))])
-             (and (not (equal? rt '(() ())))
-                  rt))))
-       alist))
-    `(=/= ,@alist*))
-
-  (define (equal+lauqe xs ys)
-    (or (equal? xs ys)
-        (equal? (cons (cdr xs) (car xs)) ys)))
+    `(=/= ,@(lex-sort (map (compose lex-sort pair->tuple) alist))))
 
   (define (reducible? diseq-spec)
     (check (list? diseq-spec))
     (exists (lambda (aq) (not (var? (car aq))))
             diseq-spec))
 
+  (define (reduced diseq-spec)
+    (varmap->alist
+     (unify (map car diseq-spec)
+            (map cdr diseq-spec)
+            empty-varmap)))
+
+  (define (subsumes? ls rs)
+    (lset<= equal? ls rs))
+
+  ;; TODO: This is copied verbatim from `state.ss`; factor out
+  (define (free-variables obj)
+    (cond
+      [(var? obj) (list obj)]
+      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
+      [else '()]))
+
+  (define (trivial-instantiation? vs l)
+    (define rs (free-variables vs))
+    (find-subtree (lambda (obj) (and (var? obj) (not (memq obj rs))))
+                  l))
+
   ;; (=/= ((A . B) (C . D) (E . F)))
   ;; Means either, A ≠ B or C ≠ D or E ≠ F
 
   (define-rules
-    (forall (x y)
-      (=/= x y)
-      <=>
-      (=/=* (list (cons x y))))
-    (forall ()
-      (=/=* (list))
-      <=>
-      fail)
-    (forall (l ls)
-      (=/=* (cons (cons l l) ls))
-      <=>
-      (=/=* ls))
+    (forall (x y) (=/= x y) <=> (=/=* (list (cons x y))))
+    (forall () (=/=* (list)) <=> fail)
+    (forall (l ls) (=/=* (cons (cons l l) ls)) <=> (=/=* ls))
     (forall (l r rs)
       (=/=* (cons (cons l r) rs))
       (ground atom? l)
@@ -84,19 +74,39 @@
       (symbolo r))
     (forall (l r rs)
       (=/=* (cons (cons l r) rs))
-      (numbero l)
-      (symbolo r)
+      (numbero r)
+      (symbolo l)
       <=>
-      (numbero l)
-      (symbolo r))
+      (numbero r)
+      (symbolo l))
     (forall (ll lr rl rr rs)
       (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs))
       <=>
       (=/=* (cons* (cons ll rl) (cons lr rr) rs)))
-    #;(forall (ls vs)
-        (reifying vs)
-        (=/=* ls)
-        (ground reducible? ls)
-        <=>
-        (=/=* (reduced ls))
-        (reifying vs))))
+    (forall (ls rs vs)
+      (reifying vs)
+      (=/=* ls)
+      (=/=* rs)
+      (ground subsumes? ls rs)
+      <=>
+      (reifying vs)
+      (=/=* ls))
+    (forall (ls vs)
+      (reifying vs)
+      (=/=* ls)
+      (ground reducible? ls)
+      <=>
+      (=/=* (reduced ls))
+      (reifying vs))
+    (forall (ls vs)
+      (reifying vs)
+      (=/=* ls)
+      (ground
+       (lambda (vs ls)
+         (exists
+          (lambda (l) (trivial-instantiation? vs l))
+          ls))
+       vs
+       ls)
+      <=>
+      (reifying vs))))

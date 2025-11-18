@@ -23,7 +23,8 @@
           symbol
           prioritize-comparators order->comparator comparator->order
           group-by
-          single-out)
+          single-out
+          find-subtree)
   (import (rnrs)
           (srfi :39 parameters)
           (only (srfi :1 lists) split-at take reduce))
@@ -157,6 +158,13 @@
         [(or (null? l2) (pair? l2)) '<]
         [else (elem-compare l1 l2)]))
     compare)
+
+  (define (find-subtree pred? tree)
+    (cond
+      [(pred? tree) tree]
+      [(pair? tree) (or (find-subtree pred? (car tree))
+                        (find-subtree pred? (cdr tree)))]
+      [else #f]))
 
   (define (repeatedly k thnk)
     (let loop ([i 0])

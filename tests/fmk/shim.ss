@@ -12,14 +12,14 @@
     (lambda (stx)
       (syntax-case stx ()
         [(test nm operation result)
-         (let ([new-name
-                (cond [(string? (syntax->datum #'nm))
-                       (datum->syntax #'test
-                                      (string->symbol
-                                       (syntax->datum #'nm)))]
-                      [(identifier? #'nm) #'nm]
-                      [else #'check-test])])
-           #`(define-test #,new-name
+         (with-syntax ([new-name
+                        (cond [(string? (syntax->datum #'nm))
+                               (datum->syntax #'test
+                                              (string->symbol
+                                               (syntax->datum #'nm)))]
+                              [(identifier? #'nm) #'nm]
+                              [else #'check-test])])
+           #'(define-test new-name
                (check (equal? operation result) nm)))])))
 
   (define-syntax-rule (defrel arg ...)

@@ -78,7 +78,7 @@
           (let*-values ([(assignments constraints)
                          (partition assignment? cs)]
                         [(facts)
-                         (append constraints (state-facts state))]
+                         (append (state-facts state) constraints)]
                         [(subst)
                          (varmap-extend-all
                           (map
@@ -153,10 +153,7 @@
                     (cdr as)))))
 
   (define (contains? needle haystack)
-    (or (equal? needle haystack)
-        (and (pair? haystack)
-             (or (contains? needle (car haystack))
-                 (contains? needle (cdr haystack))))))
+    (find-subtree (lambda (subtree) (equal? needle subtree)) haystack))
 
   (define (free-variables obj)
     (cond
@@ -180,9 +177,5 @@
     (check (state? state))
     (check ((listof var?) arguments))
 
-    (let* ([term      (walk* arguments (state-subst state))]
-           [variables (free-variables term)]
-           ;; TODO: This should probably happen as a CHR rule
-           [facts     (filter (relevant? variables) (state-facts state))])
-      (values term
-              (map walk*-arguments facts)))))
+    (values (walk* arguments (state-subst state))
+            (map walk*-arguments (state-facts state)))))

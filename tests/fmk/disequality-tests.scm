@@ -26,8 +26,8 @@ faster-miniKanren.
 (test "=/=-3"
   (run* (q)
     (fresh (x y)
-      (=/= x y)
-      (== x y)))
+      (== x y)
+      (=/= x y)))
   '())
 
 (test "=/=-4"
@@ -405,12 +405,19 @@ faster-miniKanren.
   '((_.0 2)))
 
 (defrel (distincto l)
-  (fresh (a)
-    (== l `(,a))))
+  (conde
+   ((== l '()))
+   ((fresh (a)
+      (== l `(,a))))
+   ((fresh (a ad dd)
+      (== l `(,a ,ad . ,dd))
+      (=/= a ad)
+      (distincto `(,a . ,dd))
+      (distincto `(,ad . ,dd))))))
 
 (test "=/=-50"
   (run* (q)
-    (distincto (list q)))
+    (distincto `(2 3 ,q)))
   '((_.0 (=/= ((_.0 2)) ((_.0 3))))))
 
 (defrel (rembero1 x ls out)
