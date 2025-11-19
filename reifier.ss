@@ -27,10 +27,11 @@
       (apply (constraint-reifier con) (constraint-operands con)))
 
     (let-values ([(vr cn) (query st qry)])
-      (define vs (if (= 1 (length vr)) (car vr) vr))
+      (define vs (single-out vr))
       (define c0 (filter-map reify-constraint cn))
       (if (null? c0)
           (reify vs)
-          (let* ([c1 (map lex-sort (group-by car+cdr c0))]
-                 [c2 (reify (cons vs (map delete-duplicates c1)))])
+          (let* ([c1 (map (lambda (d1) (cons (car d1) (lex-sort (cdr d1))))
+                          (group-by car+cdr c0))]
+                 [c2 (reify (cons vs c1))])
             c2)))))

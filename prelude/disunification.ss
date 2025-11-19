@@ -3,7 +3,7 @@
 (library (chrKanren prelude disunification)
   (export =/=)
   (import (rnrs)
-          (only (srfi :1 lists) filter-map lset<=)
+          (only (srfi :1 lists) filter-map lset<= lset=)
           (chrKanren syntax)
           (chrKanren check)
           (chrKanren utils)
@@ -32,7 +32,10 @@
             empty-varmap)))
 
   (define (subsumes? ls rs)
-    (lset<= equal? ls rs))
+    (define (equal-or-lauqe? l r)
+      (or (equal? l r)
+          (equal? l (cons (cdr r) (car r)))))
+    (lset<= equal-or-lauqe? ls rs))
 
   ;; TODO: This is copied verbatim from `state.ss`; factor out
   (define (free-variables obj)
@@ -98,6 +101,14 @@
       <=>
       (=/=* (reduced ls))
       (reifying vs))
+    (forall (ls vs rs)
+      (reifying vs)
+      (=/=* ls)
+      (=/=* rs)
+      (ground (lambda (ls rs) (lset= equal? ls rs)) ls rs)
+      <=>
+      (reifying vs)
+      (=/=* ls))
     (forall (ls vs)
       (reifying vs)
       (=/=* ls)
