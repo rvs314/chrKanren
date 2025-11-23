@@ -26,9 +26,13 @@
     (make-varmap (cons (cons key value) (varmap-contents vmap))))
 
   (define (varmap-extend-all alist vmap)
+    (check (varmap? vmap))
     (fold-left (lambda (acc k.v) (varmap-extend (car k.v) (cdr k.v) acc)) vmap alist))
 
   (define (varmap-update key fn vmap)
+    (check (varmap? vmap))
     (varmap-extend key (fn (varmap-lookup key vmap)) vmap))
 
-  (define varmap->alist varmap-contents))
+  (define (varmap->alist val)
+    (check (varmap? val))
+    (varmap-contents val)))

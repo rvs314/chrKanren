@@ -5,7 +5,7 @@ This is an adaptation of the `disequality-tests.scm` file in Michael Ballantyne'
 faster-miniKanren.
 |#
 
-(import (rnrs) (chrKanren base) (chrKanren test) (chrKanren tests fmk shim))
+(import (rnrs) (except (chrKanren base) run run*) (chrKanren test) (chrKanren tests fmk shim))
 
 (test "=/=-0"
   (run* (q) (=/= 5 q))

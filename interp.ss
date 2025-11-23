@@ -27,7 +27,7 @@
              (make-propagating
               (start (retract state witnesses) goal))))
          (*constraint-handling-rules*))
-        (make-singleton state)))
+        (make-solution state empty-stream)))
 
   (define *maturation-limit* (make-parameter +inf.0))
 
@@ -46,7 +46,7 @@
   (define (start st gl)
     (cond
       [(failure? gl)     empty-stream]
-      [(success? gl)     (make-singleton st)]
+      [(success? gl)     (make-solution st empty-stream)]
       [(disjunction? gl)
        (step (make-choice (make-pause st (disjunction-left gl))
                           (make-pause st (disjunction-right gl))))]
@@ -60,7 +60,10 @@
                         (call-target gl)
                         (call-arguments gl)))]
       [(posting? gl)
-       (step (propagate-constraints (constrain st (posting-constraint gl))))]
+       (let ([s1 (constrain st (posting-constraint gl))])
+         (if s1
+             (step (propagate-constraints s1))
+             empty-stream))]
       [else
        (check #f "Not sure how to start goal" st gl)]))
 
@@ -81,7 +84,7 @@
        (let ([s (age (propagating-stream strm))])
          (cond
            [(empty? s) s]
-           [(singleton? s)
+           [(and (solution? s) (empty? (solution-rest s)))
             (step (propagate-constraints (solution-first s)))]
            [(solution? s)
             (step (make-choice (propagate-constraints (solution-first s))

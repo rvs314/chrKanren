@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren unify)
-  (export walk walk* unify square-varmap)
+  (export walk walk* unify square-varmap subterm?)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren check)
@@ -27,18 +27,32 @@
       [(obj vm)
        (walk obj vm var?)]
       [(obj vm var?)
-       (fixpoint
-        (lambda (obj)
-          (if (var? obj)
-              (varmap-lookup obj vm)
-              obj))
-        eq?
-        obj)]))
+       (let walk ([obj obj])
+         (if (var? obj)
+             (let ([v0 (varmap-lookup obj vm)])
+                 (if (eq? v0 obj)
+                     obj
+                     (walk v0)))
+             obj))]))
 
   (define (square-varmap vm)
     (check (varmap? vm))
     (map (lambda (k) (cons (car k) (walk* (cdr k) vm)))
          (varmap->alist vm)))
+
+  (define (subterm? head tail vm)
+    (or (eq? head tail)
+        (and (pair? tail)
+             (or (subterm? head (car tail) vm)
+                 (subterm? head (cdr tail) vm)))
+        (let ([v0 (walk tail vm)])
+          (and (not (eq? tail v0))
+               (subterm? head v0 vm)))))
+
+  (define (extend var val vm)
+    (when (subterm? var val vm)
+      (error 'extend "Occurs-check failed"))
+    (varmap-extend var val vm))
 
   (define unify
     (case-lambda
@@ -51,10 +65,10 @@
          [(eq? lhs rhs) vm]
          [(and (var? lhs) (var? rhs))
           (if (> (var-idx lhs) (var-idx rhs))
-              (varmap-extend lhs rhs vm)
-              (varmap-extend rhs lhs vm))]
-         [(var? lhs) (varmap-extend lhs rhs vm)]
-         [(var? rhs) (varmap-extend rhs lhs vm)]
+              (extend lhs rhs vm)
+              (extend rhs lhs vm))]
+         [(var? lhs) (extend lhs rhs vm)]
+         [(var? rhs) (extend rhs lhs vm)]
          [(and (pair? lhs) (pair? rhs))
           (let ([vm0 (unify (car lhs) (car rhs) vm var?)])
             (and vm0 (unify (cdr lhs) (cdr rhs) vm0 var?)))]

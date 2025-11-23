@@ -22,18 +22,28 @@
            [s  (unify p q s0)])
       (check (eq? p (varmap-lookup p s0)))
       (check (eq? q (varmap-lookup q s0)))
-      (check (eq? q (varmap-lookup p s)))
-      (check (eq? q (varmap-lookup q s))))))
+      (check (eq? p (varmap-lookup p s)))
+      (check (eq? p (varmap-lookup q s))))))
 
 (define-test triangular-substitution
   (fresh (p q r)
     (let* ([s (unify (list p q) (list q r) empty-varmap)])
-      (check (eq? q (varmap-lookup p s)))
-      (check (eq? r (varmap-lookup q s)))
-      (check (eq? r (varmap-lookup r s))))))
+      (check (eq? p (varmap-lookup p s)))
+      (check (eq? p (varmap-lookup q s)))
+      (check (eq? p (varmap-lookup r s))))))
 
 (define-test dual-pair
   (fresh (p q r)
     (let* ([s (unify `(,p . 1) `(2 . ,q) empty-varmap)])
       (check (equal? 2 (varmap-lookup p s)))
       (check (equal? 1 (varmap-lookup q s))))))
+
+(define-test walk*?
+  (define a (make-var 'a))
+  (define b (make-var 'b))
+
+  (check (equal? `(a: ,a b: ,b) (walk*  `(a: ,a b: ,b) empty-varmap)))
+  (check (equal? '(a: 3 b: 4)
+                 (walk* `(a: ,a b: ,b) (varmap-extend a 3 (varmap-extend b 4 empty-varmap)))))
+  (check (equal? `(a: 3 b: ,b) (walk* `(a: ,a b: ,b) (varmap-extend a 3 empty-varmap))))
+  (check (equal? 3 (walk b (varmap-extend a 3 (varmap-extend b a empty-varmap))))))

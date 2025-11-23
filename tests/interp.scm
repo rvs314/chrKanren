@@ -17,7 +17,7 @@
   (*default-test-count* 10000))
 
 (define-test bind-is-immature
-  (check (not (mature? (make-bind (make-singleton empty-state) succeed)))))
+  (check (not (mature? (make-bind (make-solution empty-state empty-stream) succeed)))))
 
 (define-test (bind-left-identity [g goal-generator])
   (check (empty? (mature-finite (make-bind empty-stream g)))))

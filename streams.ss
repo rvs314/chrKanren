@@ -8,7 +8,6 @@
           make-bind     bind     bind?     bind-stream bind-goal
           empty-stream  empty    empty?
           make-propagating propagating propagating? propagating-stream
-          make-singleton singleton?
           mature?)
 
   (import (rnrs) (chrKanren check) (chrKanren utils))
@@ -68,12 +67,5 @@
   (define-record-type propagating
     (parent stream)
     (fields stream))
-
-  (define (make-singleton obj)
-    (make-solution obj empty-stream))
-
-  (define singleton?
-    (conjoin solution?
-             (compose empty? solution-rest)))
 
   (define mature? (disjoin empty? solution?)))

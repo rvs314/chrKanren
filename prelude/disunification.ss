@@ -26,10 +26,11 @@
             diseq-spec))
 
   (define (reduced diseq-spec)
-    (varmap->alist
+    (define u
      (unify (map car diseq-spec)
             (map cdr diseq-spec)
-            empty-varmap)))
+            empty-varmap))
+    (and u (varmap->alist u)))
 
   (define (subsumes? ls rs)
     (define (equal-or-lauqe? l r)
@@ -99,7 +100,10 @@
       (=/=* ls)
       (ground reducible? ls)
       <=>
-      (=/=* (reduced ls))
+      (let ([ls (reduced ls)])
+        (if ls
+            (=/=* ls)
+            succeed))
       (reifying vs))
     (forall (ls vs rs)
       (reifying vs)
@@ -120,4 +124,21 @@
        vs
        ls)
       <=>
-      (reifying vs))))
+      (reifying vs))
+    (forall (ls o n p vs)
+       (reifying vs)
+       (=/=* ls)
+       (typeo o n p)
+       (scheme (lambda (o ls p)
+                 (exists
+                  (lambda (ac)
+                    (and (not (var? (cdr ac)))
+                         (eq? o (car ac))
+                         (not (p (cdr ac)))))
+                  ls))
+               o
+               ls
+               p)
+       <=>
+       (reifying vs)
+       (typeo o n p))))

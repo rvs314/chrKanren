@@ -5,7 +5,8 @@
           fresh == conj disj
           conde succeed fail
           run run*
-          =/= symbolo numbero)
+          =/= symbolo numbero stringo
+          absento)
   (import (rnrs)
           (chrKanren vars)
           (chrKanren varmap)
@@ -22,4 +23,5 @@
           (chrKanren check)
           (chrKanren prelude unification)
           (chrKanren prelude disunification)
-          (chrKanren prelude types)))
+          (chrKanren prelude types)
+          (chrKanren prelude absento)))

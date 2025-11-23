@@ -1,21 +1,55 @@
 #!r6rs
 
 (library (chrKanren prelude types)
-  (export symbolo numbero)
+  (export symbolo numbero stringo typeo)
   (import (rnrs)
           (chrKanren rule)
           (chrKanren goals)
           (chrKanren utils)
           (chrKanren syntax))
 
-  (define-constraint (symbolo obj) `(symbolo ,obj))
-  (define-constraint (numbero obj) `(num ,obj))
+  (define-constraint (typeo obj name _pred) (list name obj))
+
+  (define (symbolo obj) (typeo obj 'sym symbol?))
+  (define (numbero obj) (typeo obj 'num number?))
+  (define (stringo obj) (typeo obj 'str string?))
 
   (define-rules
-    (forall (x) (symbolo x) (ground symbol? x)          <=> succeed)
-    (forall (x) (symbolo x) (ground (negate symbol?) x) <=> fail)
-    (forall (x) (numbero x) (ground number? x)          <=> succeed)
-    (forall (x) (numbero x) (ground (negate number?) x) <=> fail)
-    (forall (x) (numbero x) (numbero x)                 <=> (numbero x))
-    (forall (x) (symbolo x) (symbolo x)                 <=> (symbolo x))
-    (forall (x) (symbolo x) (numbero x)                 <=> fail)))
+    (forall (o n p)
+      (typeo o n p)
+      (ground (lambda (p o) (p o)) p o)
+      <=>
+      succeed)
+    (forall (o n p)
+      (typeo o n p)
+      (ground (lambda (p o) (not (p o))) p o)
+      <=>
+      fail)
+    (forall (o n p)
+      (typeo o n p)
+      (typeo o n p)
+      <=>
+      (typeo o n p))
+    (forall (o n n^ p p^)
+      (typeo o n p)
+      (typeo o n^ p^)
+      (ground (negate eq?) n n^)
+      <=>
+      fail)
+    (forall (o n p vs)
+      (reifying vs)
+      (typeo o n p)
+      (scheme (lambda (o vs)
+                (not (find-subtree
+                      (lambda (needle) (eq? o needle))
+                      vs)))
+              o
+              vs)
+      <=>
+      (reifying vs))
+    (forall (o n n^ p p^)
+      (typeo o n p)
+      (typeo o n^ p^)
+      (ground (negate eq?) p p^)
+      <=>
+      fail)))

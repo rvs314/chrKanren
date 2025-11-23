@@ -2,6 +2,7 @@
 
 (import (rnrs)
         (chrKanren test)
+        (chrKanren utils)
         (chrKanren base)
         (chrKanren vars)
         (chrKanren state)
@@ -18,9 +19,12 @@
    [succeed (== 'pig obj)]
    [(== obj 'robot) fail]))
 
+(define the-animals '(pig goat cow))
+
 (define-test test-animalo
-  (define the-animals '(pig goat cow))
-  (check (lset= equal? the-animals (run* (p) (animalo p))))
+  (check (lset= equal?
+                (map (compose list list) the-animals)
+                (run* (p) (animalo p))))
   (for-each
    (lambda (animal)
      (check (pair? (run* () (animalo animal)))
@@ -37,9 +41,8 @@
     (== d ys)))
 
 (define-test test-chaino
-  (define res (run* (p q) (chaino p q)))
-  (check (= (length res) 1))
-  (check (eq? (caar res) (cadar res))))
+  (check (equal? (run* (p q) (chaino p q))
+                 '(((_.0 _.0))))))
 
 (define-relation (appendo xs ys zs)
   (conde
@@ -52,25 +55,25 @@
 (define-test test-appendo
   (check
    (equal? (run-finite 3 () (appendo '(1 2 3) '(4 5 6) '(1 2 3 4 5 6)))
-           '(())))
+           '((()))))
 
   (check
    (equal? (run*-finite (p) (appendo p '(4 5 6) '(1 2 3 4 5 6)))
-           '((1 2 3))))
+           '((((1 2 3))))))
 
   (check
    (equal? (run*-finite (p q) (appendo p q '(1 2 3 4 5 6))) 
-           '((() (1 2 3 4 5 6))
-             ((1) (2 3 4 5 6))
-             ((1 2) (3 4 5 6))
-             ((1 2 3) (4 5 6))
-             ((1 2 3 4) (5 6))
-             ((1 2 3 4 5) (6))
-             ((1 2 3 4 5 6) ()))))
+           '(((() (1 2 3 4 5 6)))
+             (((1) (2 3 4 5 6)))
+             (((1 2) (3 4 5 6)))
+             (((1 2 3) (4 5 6)))
+             (((1 2 3 4) (5 6)))
+             (((1 2 3 4 5) (6)))
+             (((1 2 3 4 5 6) ())))))
 
   (check
    (equal? (run-finite 3 (p q r) (appendo p q r))
-           '((() _.0 _.0)
-             ((_.0) _.1 (_.0 . _.1))
-             ((_.0 _.1) _.2 (_.0 _.1 . _.2))))))
+           '(((() _.0 _.0))
+             (((_.0) _.1 (_.0 . _.1)))
+             (((_.0 _.1) _.2 (_.0 _.1 . _.2)))))))
 

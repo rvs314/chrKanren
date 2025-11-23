@@ -8,6 +8,7 @@
           ground)
   (import (rnrs)
           (srfi :39 parameters)
+          (chrKanren check)
           (chrKanren utils)
           (chrKanren vars)
           (chrKanren goals))

@@ -23,7 +23,7 @@
           symbol
           prioritize-comparators order->comparator comparator->order
           group-by
-          single-out
+          singleton? single-out
           find-subtree)
   (import (rnrs)
           (srfi :39 parameters)
@@ -325,8 +325,8 @@
 
   (define (group-by proj objs)
     (hashtable->alist
-     (fold-left
-      (lambda (acc obj)
+     (fold-right
+      (lambda (obj acc)
         (let-values ([(key val)
                       (call-with-values
                        (lambda () (proj obj))
@@ -338,7 +338,9 @@
       (make-equal-hashtable)
       objs)))
 
+  (define singleton? (conjoin pair? (compose null? cdr)))
+
   (define (single-out obj)
-    (if (and (list? obj) (= 1 (length obj)))
+    (if (singleton? obj)
         (car obj)
         obj)))

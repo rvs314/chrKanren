@@ -2,7 +2,7 @@
 
 (import (rnrs)
         (chrKanren test)
-        (chrKanren base)
+        (except (chrKanren base) symbolo numbero)
         (chrKanren vars)
         (chrKanren state)
         (chrKanren streams)
@@ -11,7 +11,6 @@
         (chrKanren interp)
         (chrKanren unify)
         (chrKanren goals))
-
 
 (define-constraint (symbolo obj)
   `(symbolo ,obj))
@@ -32,9 +31,9 @@
 
 (define-test symbolo-test
   (check (equal? (run* (p) (symbolo p))
-                 '((_.0 (symbolo (_.0))))))
+                 '(((_.0) (symbolo _.0)))))
   (check (equal? (run* () (symbolo 'foo))
-                 '(())))
+                 '((()))))
   (check (equal? (run* () (symbolo 3))
                  '())))
 
@@ -48,9 +47,9 @@
 
 (define-test numbero-test
   (check (equal? (run* (p) (numbero p))
-                 '((_.0 (numbero (_.0))))))
+                 '(((_.0) (numbero _.0)))))
   (check (equal? (run* () (numbero 3))
-                 '(())))
+                 '((()))))
   (check (equal? (run* () (numbero 'foo))
                  '()))
   (check (equal? (run* (p) (numbero p) (symbolo p))
