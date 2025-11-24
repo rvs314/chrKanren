@@ -7,7 +7,9 @@
           (chrKanren goals)
           (chrKanren compare)
           (chrKanren vars)
+          (chrKanren varmap)
           (chrKanren utils)
+          (chrKanren unify)
           (chrKanren prelude disunification)
           (chrKanren prelude types)
           (chrKanren syntax))
@@ -15,7 +17,7 @@
   (define-constraint (absento needle haystack)
     `(absento ,needle ,haystack))
 
-  ;; TODO: This is copied verbatim from `state.ss`; factor out
+  ;; TODO: This is begin copied verbatim from `state.ss`; factor out
   (define (free-variables obj)
     (cond
       [(var? obj) (list obj)]
@@ -37,6 +39,11 @@
       (ground (negate pair?) y)
       <=>
       (=/= x y))
+    (forall (x y)
+      (absento x y)
+      (absento x y)
+      <=>
+      (absento x y))
     (forall (x y n p)
       (absento x y)
       (typeo y n p)
@@ -66,4 +73,40 @@
        vs
        x)
       <=>
-      (reifying vs))))
+      (reifying vs))
+    (forall (x y vs)
+      (reifying vs)
+      (absento x y)
+      (scheme (lambda (y x) (subterm? y x empty-varmap)) y x)
+      <=>
+      (reifying vs))
+    (forall (x y vs)
+      (reifying vs)
+      (absento x y)
+      (=/=* (list (cons x y)))
+      <=>
+      (reifying vs)
+      (absento x y))
+    (forall (x y vs)
+      (reifying vs)
+      (absento x y)
+      (=/=* (list (cons y x)))
+      <=>
+      (reifying vs)
+      (absento x y))
+    (forall (x y z vs)
+      (reifying vs)
+      (absento x y)
+      (absento z y)
+      (ground (lambda (x y) (subterm? x y empty-varmap)) x z)
+      <=>
+      (reifying vs)
+      (absento x y))
+    (forall (x y ls vs)
+      (reifying vs)
+      (absento x y)
+      (=/=* ls)
+      (ground subsumes? (list (cons x y)) ls)
+      <=>
+      (reifying vs)
+      (absento x y))))

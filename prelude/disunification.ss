@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren prelude disunification)
-  (export =/=)
+  (export =/= =/=* subsumes?)
   (import (rnrs)
           (only (srfi :1 lists) filter-map lset<= lset=)
           (chrKanren syntax)
@@ -21,22 +21,13 @@
     `(=/= ,@(lex-sort (map (compose lex-sort pair->tuple) alist))))
 
   (define (reducible? diseq-spec)
-    (check (list? diseq-spec))
-    (exists (lambda (aq) (not (var? (car aq))))
-            diseq-spec))
+    (not (equal? (reduced diseq-spec) diseq-spec)))
 
   (define (reduced diseq-spec)
-    (define u
-     (unify (map car diseq-spec)
-            (map cdr diseq-spec)
-            empty-varmap))
-    (and u (varmap->alist u)))
+    (false-map varmap->alist (false-map square-varmap (unify* diseq-spec empty-varmap))))
 
   (define (subsumes? ls rs)
-    (define (equal-or-lauqe? l r)
-      (or (equal? l r)
-          (equal? l (cons (cdr r) (car r)))))
-    (lset<= equal-or-lauqe? ls rs))
+    (unify* ls (alist->varmap rs) (const #f)))
 
   ;; TODO: This is copied verbatim from `state.ss`; factor out
   (define (free-variables obj)
@@ -100,10 +91,8 @@
       (=/=* ls)
       (ground reducible? ls)
       <=>
-      (let ([ls (reduced ls)])
-        (if ls
-            (=/=* ls)
-            succeed))
+      (or (false-map =/=* (reduced ls))
+          succeed)
       (reifying vs))
     (forall (ls vs rs)
       (reifying vs)

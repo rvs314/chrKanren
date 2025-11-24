@@ -29,19 +29,32 @@
   (define-syntax-rule (defrel arg ...)
     (define-relation arg ...))
 
+  (define (constraint-sort cs)
+    (define (disc obj) (eqv<=? (lambda (o) (eq? o obj))))
+    (define constraint<=?
+      (prioritize (disc '=/=)
+                  (disc 'num)
+                  (disc 'sym)
+                  (disc 'str)
+                  (disc 'absento)))
+    (sort (make-pair<=? constraint<=? lex<=?) cs))
+
   (define (shim res)
     (define (shim-constraint con)
       (define kind (car con))
       (define instances (cdr con))
       (cons kind
-            (case kind
-              ((sym str num) (lex-sort (map car instances)))
-              ((=/=) (lex-sort instances))
-              (else instances))))
+            (lex-sort
+             (case kind
+               ((sym str num) (map car instances))
+               ((=/=) (map (compose lex-sort (lambda (x) (map lex-sort x))) instances))
+               (else instances)))))
 
     (define (shim-result res)
       (define term (single-out (car res)))
-      (define constraints (lex-sort (map shim-constraint (group-by car+cdr (cdr res)))))
+      (define constraints
+        (constraint-sort
+         (map shim-constraint (group-by car+cdr (cdr res)))))
       (single-out (cons term constraints)))
 
     (map shim-result res))

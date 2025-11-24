@@ -7,7 +7,7 @@
           varmap-extend
           varmap-extend-all
           varmap-update
-          varmap->alist)
+          varmap->alist alist->varmap)
   (import (rnrs) (chrKanren check) (chrKanren vars) (chrKanren utils))
 
   (define-record-type varmap (fields contents))
@@ -35,4 +35,7 @@
 
   (define (varmap->alist val)
     (check (varmap? val))
-    (varmap-contents val)))
+    (varmap-contents val))
+
+  (define (alist->varmap alist)
+    (varmap-extend-all alist empty-varmap)))

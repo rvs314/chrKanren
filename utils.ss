@@ -9,7 +9,7 @@
           car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin negate on
           and-proc or-proc
-          sort merge make-tree=? make-tree-compare
+          sort merge make-tree=?
           repeatedly
           hashtable-ref-or-compute!
           make-equal-hashtable
@@ -21,13 +21,13 @@
           treeof pairof listof
           tuple->pair pair->tuple
           symbol
-          prioritize-comparators order->comparator comparator->order
           group-by
           singleton? single-out
-          find-subtree)
+          find-subtree
+          false-map)
   (import (rnrs)
           (srfi :39 parameters)
-          (only (srfi :1 lists) split-at take reduce))
+          (only (srfi :1 lists) split-at take reduce car+cdr))
 
   (define (and-proc . objs)
     (reduce (lambda (x y) (and x y)) #t objs))
@@ -92,9 +92,6 @@
        (display " " (*puts-output-port*))
        (apply puts obj2 more)]))
 
-  (define (car+cdr pr)
-    (values (car pr) (cdr pr)))
-
   (define (ref-and-remove idx lst)
     (cond
       [(null? lst) (values #f        #f)]
@@ -121,7 +118,7 @@
          [(null? l1) l2]
          [(null? l2) l1]
          [(< (car l1) (car l2)) (cons (car l1) (merge < (cdr l1) l2))]
-         [else                  (cons (car l2) (merge < (cdr l2) l1))])]))
+         [else                  (cons (car l2) (merge < l1 (cdr l2)))])]))
 
   (define sort
     (case-lambda
@@ -142,22 +139,6 @@
          (and (apply (make-tree=? elem=?) (map car lists))
               (apply (make-tree=? elem=?) (map cdr lists)))]
         [else (apply elem=? lists)])))
-
-  (define (make-tree-compare elem-compare)
-    (define (compare l1 l2)
-      (cond
-        [(and (null? l1) (null? l2)) '=]
-        [(and (null? l1) (pair? l2)) '<]
-        [(and (pair? l1) (null? l2)) '>]
-        [(and (pair? l1) (pair? l2))
-         (let* ([o1 (compare (car l1) (car l2))])
-           (if (eq? o1 '=)
-               (compare (cdr l1) (cdr l2))
-               o1))]
-        [(or (null? l1) (pair? l1)) '>]
-        [(or (null? l2) (pair? l2)) '<]
-        [else (elem-compare l1 l2)]))
-    compare)
 
   (define (find-subtree pred? tree)
     (cond
@@ -277,41 +258,6 @@
   (define (symbol . objs)
     (string->symbol (apply string-append (map show objs))))
 
-  (define (order->comparator predicate)
-    (lambda (l r)
-      (cond
-        [(not (predicate l r)) '>]
-        [(not (predicate r l)) '<]
-        [else                  '=])))
-
-  (define (comparator->order comp)
-    (lambda (l r)
-      (case (comp l r)
-        [(< =) #t]
-        [(>)   #f]
-        [else (error 'comparator->order "Not an order" comp)])))
-
-  (define (prioritize-comparators . os)
-    (if (null? os)
-        (const '=)
-        (lambda (x y)
-          (let* ([o  (car os)]
-                 [r  (o x y)]
-                 [os (cdr os)])
-            (if (eq? r '=)
-                ((apply prioritize-comparators os) x y)
-                r)))))
-
-  (define (prioritize o1 . os)
-    (lambda (x y)
-      (let ([-> (and (o1 x y) #t)]
-            [<- (and (o1 y x) #t)])
-        (cond
-          [(eq? -> <-)      ((apply prioritize os) x y)]
-          [(and -> (not <-)) #t]
-          [(and (not ->) <-) #f]
-          [else (error 'prioritize "Impossible")]))))
-
   (define (hashtable->alist ht)
     (unless (hashtable? ht)
       (error 'hashtable->alist "hashtable->alist argument must be a hashtable" ht))
@@ -343,4 +289,9 @@
   (define (single-out obj)
     (if (singleton? obj)
         (car obj)
-        obj)))
+        obj))
+
+  (define (false-map proc . objs)
+    (if (exists not objs)
+        #f
+        (apply proc objs))))

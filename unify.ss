@@ -1,8 +1,9 @@
 #!r6rs
 
 (library (chrKanren unify)
-  (export walk walk* unify square-varmap subterm?)
+  (export walk walk* unify unify* square-varmap subterm?)
   (import (rnrs)
+          (except (srfi :1 lists) for-each assoc map fold-right member find filter partition remove car+cdr)
           (chrKanren utils)
           (chrKanren check)
           (chrKanren varmap)
@@ -37,8 +38,8 @@
 
   (define (square-varmap vm)
     (check (varmap? vm))
-    (map (lambda (k) (cons (car k) (walk* (cdr k) vm)))
-         (varmap->alist vm)))
+    (alist->varmap (map (lambda (k) (cons k (walk* k vm)))
+                        (delete-duplicates (map car (varmap->alist vm))))))
 
   (define (subterm? head tail vm)
     (or (eq? head tail)
@@ -50,9 +51,15 @@
                (subterm? head v0 vm)))))
 
   (define (extend var val vm)
-    (when (subterm? var val vm)
-      (error 'extend "Occurs-check failed"))
-    (varmap-extend var val vm))
+    (and (not (subterm? var val vm))
+         (varmap-extend var val vm)))
+
+  (define unify*
+    (case-lambda
+      [(objs vm)
+       (unify* objs vm var?)]
+      [(objs vm var?)
+       (unify (map car objs) (map cdr objs) vm var?)]))
 
   (define unify
     (case-lambda
