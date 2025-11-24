@@ -37,8 +37,9 @@
        (parse-rule (vs ...) () (rest ...))]))
 
   (define-syntax-rule (define-rules rule ...)
-    (*constraint-handling-rules*
-     (cons* (parse-rule rule) ... (*constraint-handling-rules*))))
+    (define frombnicus
+      (*constraint-handling-rules*
+       (cons* (parse-rule rule) ... (*constraint-handling-rules*)))))
 
   (define (ground pred . os)
     (define (any-vars? . os) (exists var? os))

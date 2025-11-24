@@ -1,12 +1,12 @@
 #!r6rs
 
 (library (chrKanren base)
-  (export define-relation
+  (export define-relation define-constraint
+          define-rules <=> forall ground scheme
           fresh == conj disj
           conde succeed fail
           run run*
-          =/= symbolo numbero stringo
-          absento)
+          =/= symbolo numbero stringo absento)
   (import (rnrs)
           (chrKanren vars)
           (chrKanren varmap)
