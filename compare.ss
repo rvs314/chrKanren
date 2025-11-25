@@ -63,10 +63,10 @@
   (define atom<=?
     (prioritize
      (restrict var? var<=?)
-     (restrict symbol? (on string<=? symbol->string))
      (restrict number? <=)
+     (restrict string? string<=?)
+     (restrict symbol? (on string<=? symbol->string))
      (restrict boolean? boolean<=?)
-     (restrict string? string<?)
      (restrict null? eq?)))
 
   (define (make-pair<=? car<=? cdr<=?)

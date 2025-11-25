@@ -36,10 +36,19 @@
                      (walk v0)))
              obj))]))
 
+  (define (each pd xs)
+    (cond
+      [(null? xs) '()]
+      [(not (pair? xs)) (error 'each "First argument is not a list")]
+      [(pd (car xs)) => (cons xs (each pd (cdr xs)))]
+      [else #f]))
+
   (define (square-varmap vm)
     (check (varmap? vm))
-    (alist->varmap (map (lambda (k) (cons k (walk* k vm)))
-                        (delete-duplicates (map car (varmap->alist vm))))))
+    (alist->varmap
+     (filter (lambda (k.v) (not (equal? (car k.v) (cdr k.v))))
+             (map (lambda (k) (cons k (walk* k vm)))
+                  (delete-duplicates (map car (varmap->alist vm)))))))
 
   (define (subterm? head tail vm)
     (or (eq? head tail)

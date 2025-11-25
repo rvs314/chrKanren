@@ -23,8 +23,8 @@
   (define-syntax fresh
     (syntax-rules ()
       [(fresh (var-name ...) body)
-       (let ([var-name (make-var 'var-name)]
-             ...)
+       (let* ([var-name (make-var 'var-name)]
+              ...)
          body)]
       [(fresh (var-name ...) body body* ...)
        (fresh (var-name ...) (conj body body* ...))]))

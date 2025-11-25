@@ -110,7 +110,8 @@
 
   ;; Rule -> Varmap -> Goal
   (define (instantiate-consequences rule vmap)
-    (apply (rule-consequences rule) (walk* (rule-free-variables rule) vmap (rule-var? rule))))
+    (apply (rule-consequences rule)
+           (walk* (rule-free-variables rule) vmap)))
 
   ;; State -> List Constraint -> State
   (define (retract state witnesses)

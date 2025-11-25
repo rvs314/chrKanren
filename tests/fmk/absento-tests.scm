@@ -126,11 +126,10 @@
 
 (test "test 16"
   (run* (q)
-    (fresh (a b x)
+    (fresh (a b)
       (absento a b)
       (symbolo a)
-      (numbero x)
-      (== x b)
+      (numbero b)
       (== `(,a ,b) q)))
   '(((_.0 _.1) (num _.1) (sym _.0))))
 

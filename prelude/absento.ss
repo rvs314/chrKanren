@@ -10,6 +10,7 @@
           (chrKanren varmap)
           (chrKanren utils)
           (chrKanren unify)
+          (chrKanren prelude unification)
           (chrKanren prelude disunification)
           (chrKanren prelude types)
           (chrKanren syntax))

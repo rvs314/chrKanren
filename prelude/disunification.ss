@@ -14,6 +14,7 @@
           (srfi :2 and-let*)
           (chrKanren compare)
           (chrKanren rule)
+          (chrKanren prelude unification)
           (chrKanren prelude types))
 
   (define-constraint (=/= _l _r) (error '=/= "Should not reify =/="))
@@ -24,7 +25,7 @@
     (not (equal? (reduced diseq-spec) diseq-spec)))
 
   (define (reduced diseq-spec)
-    (false-map varmap->alist (false-map square-varmap (unify* diseq-spec empty-varmap))))
+    (false-map (compose varmap->alist square-varmap) (unify* diseq-spec empty-varmap)))
 
   (define (subsumes? ls rs)
     (unify* ls (alist->varmap rs) (const #f)))
@@ -60,20 +61,26 @@
       (ground (negate equal?) l r)
       <=>
       succeed)
-    (forall (l r rs)
-      (=/=* (cons (cons l r) rs))
-      (numbero l)
-      (symbolo r)
+    (forall (l r rst n p)
+      (typeo l n p)
+      (=/=* (cons (cons l r) rst))
+      (ground (lambda (p r) (not (p r))) p r)
       <=>
-      (numbero l)
-      (symbolo r))
-    (forall (l r rs)
-      (=/=* (cons (cons l r) rs))
-      (numbero r)
-      (symbolo l)
+      (typeo l n p))
+    (forall (l r rst n p)
+      (typeo r n p)
+      (=/=* (cons (cons l r) rst))
+      (ground (lambda (p l) (not (p l))) p l)
       <=>
-      (numbero r)
-      (symbolo l))
+      (typeo r n p))
+    (forall (l r n n^ p p^ rs)
+      (=/=* (cons (cons l r) rs))
+      (typeo l n p)
+      (typeo r n^ p^)
+      (ground (negate eq?) n n^)
+      <=>
+      (typeo l n p)
+      (typeo r n^ p^))
     (forall (ll lr rl rr rs)
       (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs))
       <=>
@@ -94,14 +101,6 @@
       (or (false-map =/=* (reduced ls))
           succeed)
       (reifying vs))
-    (forall (ls vs rs)
-      (reifying vs)
-      (=/=* ls)
-      (=/=* rs)
-      (ground (lambda (ls rs) (lset= equal? ls rs)) ls rs)
-      <=>
-      (reifying vs)
-      (=/=* ls))
     (forall (ls vs)
       (reifying vs)
       (=/=* ls)
@@ -115,19 +114,19 @@
       <=>
       (reifying vs))
     (forall (ls o n p vs)
-       (reifying vs)
-       (=/=* ls)
-       (typeo o n p)
-       (scheme (lambda (o ls p)
-                 (exists
-                  (lambda (ac)
-                    (and (not (var? (cdr ac)))
-                         (eq? o (car ac))
-                         (not (p (cdr ac)))))
-                  ls))
-               o
-               ls
-               p)
-       <=>
-       (reifying vs)
-       (typeo o n p))))
+      (reifying vs)
+      (=/=* ls)
+      (typeo o n p)
+      (scheme (lambda (o ls p)
+                (exists
+                 (lambda (ac)
+                   (and (not (var? (cdr ac)))
+                        (eq? o (car ac))
+                        (not (p (cdr ac)))))
+                 ls))
+              o
+              ls
+              p)
+      <=>
+      (reifying vs)
+      (typeo o n p))))

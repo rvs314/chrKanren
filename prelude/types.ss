@@ -10,11 +10,14 @@
 
   (define-constraint (typeo obj name _pred) (list name obj))
 
-  (define (symbolo obj) (typeo obj 'sym symbol?))
-  (define (numbero obj) (typeo obj 'num number?))
-  (define (stringo obj) (typeo obj 'str string?))
+  (define-constraint (symbolo _obj) (error 'symbolo "Should not be reified"))
+  (define-constraint (numbero _obj) (error 'numbero "Should not be reified"))
+  (define-constraint (stringo _obj) (error 'stringo "Should not be reified"))
 
   (define-rules
+    (forall (obj) (symbolo obj) <=> (typeo obj 'sym symbol?))
+    (forall (obj) (numbero obj) <=> (typeo obj 'num number?))
+    (forall (obj) (stringo obj) <=> (typeo obj 'str string?))
     (forall (o n p)
       (typeo o n p)
       (ground (lambda (p o) (p o)) p o)

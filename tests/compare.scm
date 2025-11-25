@@ -13,7 +13,7 @@
   (check (lex<=? -3 +inf.0))
   (check (lex<=? "ant" "bat"))
   (check (lex<=? 0 "bat"))
-  (check (lex<=? 'zero 0)))
+  (check (lex<=? 0 'zero)))
 
 
 (define-test (lex<=?-over-lists (obj1 value-generator)

@@ -6,6 +6,7 @@
           (rename (run-shim run)
                   (run*-shim run*)))
   (import (rnrs)
+          (srfi :2 and-let*)
           (chrKanren utils)
           (chrKanren base)
           (chrKanren compare)
@@ -39,7 +40,20 @@
                   (disc 'absento)))
     (sort (make-pair<=? constraint<=? lex<=?) cs))
 
+  (define (reified-var? obj)
+    (and-let* ([(symbol? obj)]
+               [nm (symbol->string obj)]
+               [(>= (string-length nm) 3)]
+               [(char=? (string-ref nm 0) #\_)]
+               [(char=? (string-ref nm 1) #\.)])
+      #t))
+
   (define (shim res)
+    (define shim<=? (make-lex<=?
+                     (prioritize
+                      (restrict reified-var? (on string<=? symbol->string))
+                      atom<=?)))
+    (define (sort-shim ac) (sort shim<=? ac))
     (define (shim-constraint con)
       (define kind (car con))
       (define instances (cdr con))
@@ -47,7 +61,8 @@
             (lex-sort
              (case kind
                ((sym str num) (map car instances))
-               ((=/=) (map (compose lex-sort (lambda (x) (map lex-sort x))) instances))
+               ((=/=) (map (compose lex-sort (lambda (x) (map sort-shim x)))
+                           instances))
                (else instances)))))
 
     (define (shim-result res)
