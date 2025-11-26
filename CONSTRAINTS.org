@@ -1,15 +1,16 @@
 Constraints in chrKanren are primitive objects which are a special kind of miniKanren goal. The major difference between constraints and normal goals is that constraints are solved in a bottom-up and incremental fashion, while goals are solved top-down. This means that as soon as a constraint is posted, all entailments of that constraint are generated immediately. The other major difference in constraints is that their definitions are open, meaning their interpretations can be extended at arbitrary points in time.
 
-Before a constraint can be used, we must define the functor (AKA the constraint constructor) the constraint uses:
+Before a constraint can be used, we must define the constraint and how it should be reified:
 
 #+begin_src scheme
-  (declare-functor (symbolo obj))
+  (define-constraint (symbolo obj)
+     `(symbolo ,obj))
 #+end_src
 
 This declares the ~symbolo~ functor, which holds if the object constrained is a symbol. That said, it currently does little, as there are no rules written for it. The following rules give it meaning:
 
 #+begin_src scheme
-  (define-constraint-handling-rules
+  (define-rules
     [forall (x) (symbolo x) (ground (negate symbol?) x) <=> fail]
     [forall (x) (symbolo x) (ground symbol? x) <=> succeed])
 #+end_src
