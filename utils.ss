@@ -24,9 +24,11 @@
           group-by
           singleton? single-out
           find-subtree
-          false-map)
+          false-map
+          vector-exists vector-fold)
   (import (rnrs)
           (srfi :39 parameters)
+          (srfi :26 cut)
           (only (srfi :1 lists) split-at take reduce car+cdr))
 
   (define (and-proc . objs)
@@ -37,11 +39,11 @@
 
   (define (conjoin . fns)
     (lambda xs
-      (for-all (lambda (f) (apply f xs)) fns)))
+      (for-all (cut apply <> xs) fns)))
 
   (define (disjoin . fns)
     (lambda xs
-      (exists (lambda (f) (apply f xs)) fns)))
+      (exists (cut apply <> xs) fns)))
 
   (define (negate proc)
     (lambda xs
@@ -53,7 +55,7 @@
 
   (define (compose . fs)
     (define (compose₂ f1 f2)
-      (lambda xs (call-with-values (lambda () (apply f1 xs)) f2)))
+      (lambda xs (call-with-values (cut apply f1 xs) f2)))
     (fold-left compose₂ values (reverse fs)))
 
   (define (on combine . projs)
@@ -70,7 +72,7 @@
             (begin body ...)]))]))
 
   (define-syntax-rule (eta proc)
-    (lambda args (apply proc args)))
+    (cut proc <...>))
 
   (define-syntax TODO
     (identifier-syntax
@@ -187,11 +189,11 @@
          body body* ...)
        (define name
          (let ([the-hashtable obj])
-           (lambda (arg)
-             (hashtable-ref-or-compute!
-              the-hashtable
-              arg
-              (lambda () body body* ...)))))]
+           (cut
+             hashtable-ref-or-compute!
+             the-hashtable
+             <>
+             (lambda () body body* ...))))]
       [(define/memoized (name arg)
          body body* ...)
        (define/memoized (name arg)
@@ -251,8 +253,7 @@
     (case-lambda
       [(obj mthd)
        (call-with-string-output-port
-        (lambda (sop)
-          (mthd obj sop)))]
+        (cut mthd obj <>))]
       [(obj) (show obj display)]))
 
   (define (symbol . objs)
@@ -279,7 +280,7 @@
                        (case-lambda
                          [(f)   (values f obj)]
                          [(f g) (values f g)]))])
-          (hashtable-update! acc key (lambda (x) (cons val x)) '())
+          (hashtable-update! acc key (cut cons val <>) '())
           acc))
       (make-equal-hashtable)
       objs)))
@@ -292,6 +293,23 @@
         obj))
 
   (define (false-map proc . objs)
-    (if (exists not objs)
-        #f
-        (apply proc objs))))
+    (and (not (exists not objs))
+         (apply proc objs)))
+
+  (define (vector-fold proc init v . vs)
+    (define l (vector-length v))
+    (unless (for-all (lambda (v^) (equal? (vector-length v^) l)) vs)
+      (error 'vector-fold "All vectors must have the same length"))
+    (let loop ([acc init] [i 0])
+      (if (= i l)
+          acc
+          (loop (apply proc
+                       acc
+                       (map (cut vector-ref <> i) (cons v vs)))
+                (+ 1 i)))))
+
+  (define (vector-exists pred vec)
+    (let loop ([i 0])
+      (and (< i (vector-length vec))
+           (or (pred (vector-ref vec i))
+               (loop (+ 1 i)))))))

@@ -161,6 +161,7 @@
     (cond
       [(var? obj) (list obj)]
       [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
+      [(vector? obj) (free-variables (vector->list obj))]
       [else '()]))
 
   ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))

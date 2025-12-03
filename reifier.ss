@@ -18,6 +18,7 @@
         (set! var-counter (+ 1 var-counter))))
     (let loop ([obj obj])
       (cond
+        [(vector? obj) (vector-map loop obj)]
         [(pair? obj) (cons (loop (car obj)) (loop (cdr obj)))]
         [(var? obj) (name obj)]
         [else obj])))

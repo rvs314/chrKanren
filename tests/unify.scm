@@ -38,11 +38,18 @@
       (check (equal? 2 (varmap-lookup p s)))
       (check (equal? 1 (varmap-lookup q s))))))
 
+(define-test vector-unification
+  (fresh (p q)
+    (let* ([s (unify `#(,p 1) `#(2 ,q) empty-varmap)])
+      (check (equal? 2 (varmap-lookup p s)))
+      (check (equal? 1 (varmap-lookup q s))))))
+
 (define-test walk*?
   (define a (make-var 'a))
   (define b (make-var 'b))
 
   (check (equal? `(a: ,a b: ,b) (walk*  `(a: ,a b: ,b) empty-varmap)))
+  (check (equal? `#(a: ,a b: ,b) (walk*  `#(a: ,a b: ,b) empty-varmap)))
   (check (equal? '(a: 3 b: 4)
                  (walk* `(a: ,a b: ,b) (varmap-extend a 3 (varmap-extend b 4 empty-varmap)))))
   (check (equal? `(a: 3 b: ,b) (walk* `(a: ,a b: ,b) (varmap-extend a 3 empty-varmap))))

@@ -16,6 +16,7 @@
       [(obj vm var?)
        (cond
          [(pair? obj) (cons (walk* (car obj) vm var?) (walk* (cdr obj) vm var?))]
+         [(vector? obj) (vector-map (lambda (obj) (walk* obj vm var?)) obj)]
          [(var? obj)
           (let ([rs (walk obj vm var?)])
             (if (var? rs)
@@ -36,13 +37,6 @@
                      (walk v0)))
              obj))]))
 
-  (define (each pd xs)
-    (cond
-      [(null? xs) '()]
-      [(not (pair? xs)) (error 'each "First argument is not a list")]
-      [(pd (car xs)) => (cons xs (each pd (cdr xs)))]
-      [else #f]))
-
   (define (square-varmap vm)
     (check (varmap? vm))
     (alist->varmap
@@ -50,14 +44,18 @@
              (map (lambda (k) (cons k (walk* k vm)))
                   (delete-duplicates (map car (varmap->alist vm)))))))
 
-  (define (subterm? head tail vm)
-    (or (eq? head tail)
-        (and (pair? tail)
-             (or (subterm? head (car tail) vm)
-                 (subterm? head (cdr tail) vm)))
-        (let ([v0 (walk tail vm)])
-          (and (not (eq? tail v0))
-               (subterm? head v0 vm)))))
+  (define (subterm? needle haystack vm)
+    (or (eq? needle haystack)
+        (and (pair? haystack)
+             (or (subterm? needle (car haystack) vm)
+                 (subterm? needle (cdr haystack) vm)))
+        (and (vector? haystack)
+             (vector-exists
+              (lambda (el) (subterm? needle el vm))
+              haystack))
+        (let ([v0 (walk haystack vm)])
+          (and (not (eq? haystack v0))
+               (subterm? needle v0 vm)))))
 
   (define (extend var val vm)
     (and (not (subterm? var val vm))
@@ -85,6 +83,14 @@
               (extend rhs lhs vm))]
          [(var? lhs) (extend lhs rhs vm)]
          [(var? rhs) (extend rhs lhs vm)]
+         [(and (vector? lhs) (vector? rhs))
+          (and (eqv? (vector-length lhs) (vector-length rhs))
+               (vector-fold
+                (lambda (acc v1 v2)
+                  (and acc (unify v1 v2 acc var?)))
+                vm
+                lhs
+                rhs))]
          [(and (pair? lhs) (pair? rhs))
           (let ([vm0 (unify (car lhs) (car rhs) vm var?)])
             (and vm0 (unify (cdr lhs) (cdr rhs) vm0 var?)))]
