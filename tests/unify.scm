@@ -33,7 +33,7 @@
       (check (eq? p (varmap-lookup r s))))))
 
 (define-test dual-pair
-  (fresh (p q r)
+  (fresh (p q)
     (let* ([s (unify `(,p . 1) `(2 . ,q) empty-varmap)])
       (check (equal? 2 (varmap-lookup p s)))
       (check (equal? 1 (varmap-lookup q s))))))

@@ -35,9 +35,9 @@
       (== x y)
       (scheme var? x)
       <=>
-      (<- x y))
+      (=== x y))
     (forall (x y)
       (== x y)
       (scheme var? y)
       <=>
-      (<- y x))))
+      (=== y x))))

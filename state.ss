@@ -53,7 +53,7 @@
                     (walk* objs (state-subst state)))
              (list (cons (state-subst state) constraint))
              '()))]
-      [(assignment? constraint)
+      [(same-check? constraint)
        (let*-values ([(lhs rhs) (apply values (constraint-operands constraint))]
                      [(vm1) (unify lhs rhs (state-subst state) metavar?)])
          (if vm1 (list (cons vm1 constraint)) '()))]
@@ -64,11 +64,6 @@
                      [vm (unify-constraint constraint other (state-subst state) metavar?)])
             (cons vm other)))
         (state-facts state))]))
-
-  (define (extend-all ast vm)
-    (and (not (exists (lambda (k.v) (subterm? (car k.v) (cdr k.v) vm))
-                      ast))
-         (varmap-extend-all ast vm)))
 
   ;; State -> (or Constraint (Listof Constraint)) -> State
   (define (constrain state cs)
@@ -81,15 +76,15 @@
                 cs)])
       (if (null? cs)
           state
-          (let*-values ([(assignments constraints)
-                         (partition assignment? cs)]
+          (let*-values ([(same-checks constraints)
+                         (partition same-check? cs)]
                         [(facts)
                          (append (state-facts state) constraints)]
                         [(subst)
-                         (extend-all
+                         (unify*
                           (map
                            (compose tuple->pair constraint-operands)
-                           assignments)
+                           same-checks)
                           (state-subst state))]
                         [(state1) (and subst (make-state subst facts))])
             state1))))

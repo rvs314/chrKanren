@@ -3,7 +3,7 @@
 (library (chrKanren base)
   (export define-relation define-constraint
           define-rules <=> forall ground scheme
-          fresh == conj disj
+          fresh === == conj disj
           conde succeed fail
           run run*
           =/= symbolo numbero stringo absento)
