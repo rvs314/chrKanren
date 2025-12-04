@@ -100,17 +100,23 @@
       [(dotted-list foo)
        (dotted-list-helper () foo)]))
 
-  (define-syntax-rule (define-constraint (constructor . arglist) body ...)
-    (define (constructor . arglist)
-      (post (make-constraint constructor
-                             (lambda arglist body ...)
-                             (dotted-list arglist)))))
+  (define-syntax define-constraint
+    (syntax-rules ()
+      [(define-constraint (constructor . arglist))
+       (define-constraint (constructor . arglist)
+         (cons 'constructor (list . arglist)))]
+      [(define-constraint (constructor . arglist)
+         body ...)
+       (define (constructor . arglist)
+         (post (make-constraint constructor
+                                (lambda arglist body ...)
+                                (dotted-list arglist))))]))
 
-  (define-constraint (=== lhs rhs)
+  (define-constraint (=== _lhs _rhs)
     (error '=== "This should never reify"))
-  (define-constraint (scheme pred obj . objs)
+  (define-constraint (scheme _pred _obj . _objs)
     (error 'scheme "This should never reify"))
-  (define-constraint (reifying query-variables)
+  (define-constraint (reifying _query-variables)
     #f)
 
   (define (same-check? con)
