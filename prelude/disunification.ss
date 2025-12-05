@@ -51,6 +51,13 @@
     (forall (l ls) (=/=* (cons (cons l l) ls)) <=> (=/=* ls))
     (forall (l r rs)
       (=/=* (cons (cons l r) rs))
+      (ground procedure? l)
+      (ground procedure? r)
+      (ground (negate eq?) l r)
+      <=>
+      succeed)
+    (forall (l r rs)
+      (=/=* (cons (cons l r) rs))
       (ground atom? l)
       (ground (negate equal?) l r)
       <=>
@@ -61,26 +68,26 @@
       (ground (negate equal?) l r)
       <=>
       succeed)
-    (forall (l r rst n p)
-      (typeo l n p)
+    (forall (l r rst n p pr)
+      (typeo l n p pr)
       (=/=* (cons (cons l r) rst))
       (ground (lambda (p r) (not (p r))) p r)
       <=>
-      (typeo l n p))
-    (forall (l r rst n p)
-      (typeo r n p)
+      (typeo l n p pr))
+    (forall (l r rst n p pr)
+      (typeo r n p pr)
       (=/=* (cons (cons l r) rst))
       (ground (lambda (p l) (not (p l))) p l)
       <=>
-      (typeo r n p))
-    (forall (l r n n^ p p^ rs)
+      (typeo r n p pr))
+    (forall (l r n n^ p p^ rs pr pr^)
       (=/=* (cons (cons l r) rs))
-      (typeo l n p)
-      (typeo r n^ p^)
+      (typeo l n p pr)
+      (typeo r n^ p^ pr^)
       (ground (negate eq?) n n^)
       <=>
-      (typeo l n p)
-      (typeo r n^ p^))
+      (typeo l n p pr)
+      (typeo r n^ p^ pr^))
     (forall (ll lr rl rr rs)
       (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs))
       <=>
@@ -113,10 +120,10 @@
        ls)
       <=>
       (reifying vs))
-    (forall (ls o n p vs)
+    (forall (ls o n p pr vs)
       (reifying vs)
       (=/=* ls)
-      (typeo o n p)
+      (typeo o n p pr)
       (scheme (lambda (o ls p)
                 (exists
                  (lambda (ac)
@@ -129,4 +136,4 @@
               p)
       <=>
       (reifying vs)
-      (typeo o n p))))
+      (typeo o n p pr))))

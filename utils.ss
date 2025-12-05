@@ -189,11 +189,11 @@
          body body* ...)
        (define name
          (let ([the-hashtable obj])
-           (cut
-             hashtable-ref-or-compute!
-             the-hashtable
-             <>
-             (lambda () body body* ...))))]
+           (lambda (arg)
+             (hashtable-ref-or-compute!
+              the-hashtable
+              arg
+              (lambda () body body* ...)))))]
       [(define/memoized (name arg)
          body body* ...)
        (define/memoized (name arg)

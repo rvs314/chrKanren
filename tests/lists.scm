@@ -2,7 +2,7 @@
 
 (import (rnrs)
         (chrKanren base)
-        (chrKanren prelude applyo)
+        (chrKanren prelude types)
         (chrKanren prelude lists)
         (chrKanren check)
         (chrKanren test))

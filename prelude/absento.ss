@@ -45,11 +45,11 @@
       (absento x y)
       <=>
       (absento x y))
-    (forall (x y n p)
+    (forall (x y n p pr^)
       (absento x y)
-      (typeo y n p)
+      (typeo y n p pr^)
       <=>
-      (typeo y n p)
+      (typeo y n p pr^)
       (=/= x y))
     (forall (x y z)
       (absento x (cons y z))

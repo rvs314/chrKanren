@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren prelude lists)
-  (export nullo pairo conso caro cdro
+  (export listo nullo pairo conso caro cdro
           fold-lefto fold-lefto*
           mapo map*o
           appendo append*o
@@ -9,7 +9,16 @@
   (import (rnrs)
           (chrKanren utils)
           (chrKanren base)
-          (chrKanren prelude applyo))
+          (chrKanren prelude types))
+
+  (define-relation (valid-listo obj)
+    (conde
+     [(nullo obj)]
+     [(fresh (a d)
+        (== obj (cons a d))
+        (listo d))]))
+
+  (define (listo obj) (typeo obj 'lst (disjoin null? pair?) valid-listo))
 
   (define-relation (nullo obj)
     (== obj '()))
