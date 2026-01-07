@@ -17,11 +17,6 @@
     (forall (x y)
       (== x y)
       (ground atom? x)
-      (ground (negate equal?) x y)
-      <=>
-      fail)
-    (forall (x y)
-      (== x y)
       (ground atom? y)
       (ground (negate equal?) x y)
       <=>
@@ -31,6 +26,16 @@
       <=>
       (== a c)
       (== b d))
+    (forall (a b c)
+      (== c (cons a b))
+      (ground (negate pair?) c)
+      <=>
+      fail)
+    (forall (a b c)
+      (== (cons a b) c)
+      (ground (negate pair?) c)
+      <=>
+      fail)
     (forall (x y)
       (== x y)
       (scheme var? x)

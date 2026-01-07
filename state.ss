@@ -65,7 +65,7 @@
             (cons vm other)))
         (state-facts state))]))
 
-  ;; State -> (or Constraint (Listof Constraint)) -> State
+  ;; State -> (or Constraint (Listof Constraint)) -> (or #f State)
   (define (constrain state cs)
     (check (state? state))
     (check ((disjoin constraint? (listof constraint?)) cs))
@@ -119,7 +119,8 @@
 
   ;; State -> Rule -> (or #f (Pairof Goal (Listof Constraint)))
   (define (apply-rule state rule)
-    ;; Varmap -> Listof Posting -> Listof Constraint -> (or #f (Pairof Varmap (Listof Constraint)))
+    ;; Varmap -> Listof Posting -> Listof Constraint ->
+    ;; (or #f (Pairof Varmap (Listof Constraint)))
     (define (find-assignment vmap prereqs seen)
       (check (varmap? vmap) "find-assignment")
       (check ((listof posting?) prereqs))
@@ -156,13 +157,6 @@
 
   (define (contains? needle haystack)
     (find-subtree (lambda (subtree) (equal? needle subtree)) haystack))
-
-  (define (free-variables obj)
-    (cond
-      [(var? obj) (list obj)]
-      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
-      [(vector? obj) (free-variables (vector->list obj))]
-      [else '()]))
 
   ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))
   (define (query state arguments)

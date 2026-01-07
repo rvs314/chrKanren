@@ -1,11 +1,11 @@
 #!r6rs
 
 (library (chrKanren rule)
-  (export forall parse-rule define-rules
-          *constraint-handling-rules* define-rules
+  (export define-rules
+          *constraint-handling-rules*
           forall <=>
           rule rule? rule-free-variables rule-prereqs rule-consequences
-          ground)
+          scheme ground)
   (import (rnrs)
           (srfi :39 parameters)
           (chrKanren check)

@@ -115,3 +115,25 @@
   (define (halve x) (/ x 2))
   (check (equal? (fixpoint halve close-enuf? 32)
                  1/1024)))
+
+(define-test proccall-test
+  (check (equal? (proccall list 1 '(2 3)) '(1 (2 3))))
+  (check (equal? (proccall list 1 2 3 '(2 3)) '(1 2 3 (2 3)))))
+
+(define-test zipper-test
+  (check (equal? (zippers '()) '()))
+  (check (equal? (zippers '(1 2 3))
+                 '((() 1 (2 3))
+                   ((1) 2 (3))
+                   ((2 1) 3 ()))))
+  (let* ([long-list (list-tabulate
+                     40
+                     (lambda (_) (random-integer 30)))]
+         [zs (zippers long-list)])
+    (for-each
+     (lambda (zp)
+       (check (equal? (append (reverse (car zp))
+                              (list (cadr zp))
+                              (caddr zp))
+                      long-list)))
+     zs)))

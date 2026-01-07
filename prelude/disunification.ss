@@ -30,13 +30,6 @@
   (define (subsumes? ls rs)
     (unify* ls (alist->varmap rs) (const #f)))
 
-  ;; TODO: This is copied verbatim from `state.ss`; factor out
-  (define (free-variables obj)
-    (cond
-      [(var? obj) (list obj)]
-      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
-      [else '()]))
-
   (define (trivial-instantiation? vs l)
     (define rs (free-variables vs))
     (find-subtree (lambda (obj) (and (var? obj) (not (memq obj rs))))

@@ -1,9 +1,10 @@
 #!r6rs
 
 (library (chrKanren prelude lists)
-  (export listo nullo pairo conso caro cdro
-          fold-lefto fold-lefto*
-          mapo map*o
+  (export listo label-listo nullo pairo conso caro cdro
+          fold-lefto fold-left*o
+          for-allo for-all*o
+          existso exists*o
           appendo append*o
           assoco lookupo)
   (import (rnrs)
@@ -18,7 +19,15 @@
         (== obj (cons a d))
         (listo d))]))
 
-  (define (listo obj) (typeo obj 'lst (disjoin null? pair?) valid-listo))
+  (define (listo obj)
+    (typeo obj 'lst (disjoin null? pair?) valid-listo))
+
+  (define-relation (label-listo obj)
+    (conde
+     [(nullo obj)]
+     [(fresh (a d)
+        (== obj (cons a d))
+        (label-listo d))]))
 
   (define-relation (nullo obj)
     (== obj '()))
@@ -66,34 +75,45 @@
     (let-values ([(finish edges*)
                   (ref-and-remove (length edges+finish)
                                   (cons edge1 edges+finish))])
-      (fold-lefto* patho start edges* finish)))
+      (fold-left*o patho start edges* finish)))
 
-  (define-relation (fold-lefto* patho start edges* finish)
+  (define-relation (fold-left*o patho start edges* finish)
     (conde
      [(map-nullo edges*) (== start finish)]
      [(fresh (e1s ess arglist step)
         (map-conso e1s ess edges*)
         (append2o (cons start e1s) (list step) arglist)
         (applyo patho arglist)
-        (fold-lefto* patho step ess finish))]))
+        (fold-left*o patho step ess finish))]))
 
-  (define-relation (map*o rel arg*)
+  (define-relation (for-all*o rel arg*)
     (conde
      [(map-nullo arg*)]
      [(fresh (a1s gss)
         (map-conso a1s gss arg*)
         (applyo rel a1s)
-        (map*o rel gss))]))
+        (for-all*o rel gss))]))
 
-  (define (mapo rel . args*)
-    (map*o rel args*))
+  (define (for-allo rel . args*)
+    (for-all*o rel args*))
+
+  (define-relation (exists*o rel arg*)
+    (fresh (a1s gss)
+      (map-conso a1s gss arg*)
+      (conde
+       [(applyo rel a1s)]
+       [(exists*o rel gss)])))
+
+  (define (existso rel . args*)
+    (for-all*o rel args*))
 
   (define-relation (append*o xs* rs)
     (fold-lefto append2o '() xs* rs))
 
   (define (appendo lst . lsts+res)
-    (let-values ([(res lsts) (ref-and-remove (length lsts+res)
-                                             (cons lst lsts+res))])
+    (let-values ([(res lsts)
+                  (ref-and-remove (length lsts+res)
+                                  (cons lst lsts+res))])
       (append*o lsts res)))
 
   (define-relation (assoco key alist res)

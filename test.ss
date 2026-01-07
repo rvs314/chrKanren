@@ -46,6 +46,9 @@
     make-test-condition test-condition?
     (arg test-condition-args))
 
+  (define-condition-type &skip-condition &condition
+    make-skip-condition skip-condition?)
+
   (define *fail-fast* (make-parameter (member "--fail-fast" (cdr (command-line)))))
 
   (define (report . objs)
@@ -61,7 +64,9 @@
 
   (define (report-condition e)
     (report (current-error-port)
-            "FAILED: "
+            (if (skip-condition? e)
+                "SKIPPED: "
+                "FAILED: ")
             #\newline
             (and (message-condition? e)
                  (fresh-line (condition-message e))))
@@ -74,7 +79,7 @@
       (raise e)))
 
   (define-syntax define-test
-    (syntax-rules (test-count)
+    (syntax-rules (test-count failing)
       [(define-test (name [nm gen] ...)
          (test-count k)
          body body* ...)
@@ -85,7 +90,8 @@
                        (condition
                         e
                         (make-test-condition
-                         (map cons '(nm ...)
+                         (map cons
+                              '(nm ...)
                               (list nm ...)))))]]
              body body* ...))
          (define (run-test test-cont)
@@ -106,7 +112,9 @@
                   (let ([nm (gen (test-size (/ i count)))] ...)
                     (test-body nm ...))))))]
            [(zero? count)
-            (run-test (lambda () 'skipped))]
+            (run-test
+             (lambda ()
+               (raise (make-skip-condition))))]
            [else
             (error 'define-test "test-count must be an integer")]))]
       [(define-test (name)

@@ -3,6 +3,7 @@
 (library (chrKanren vars)
   (export *var-counter*
           var var-name make-var var? var-idx
+          free-variables
           fresh var<=?)
 
   (import (rnrs)
@@ -36,5 +37,13 @@
        (lambda (name)
          (*var-counter* (+ 1 (*var-counter*)))
          (new name (- (*var-counter*) 1))))))
+
+  (define (free-variables obj)
+    (cond
+      [(var? obj) (list obj)]
+      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
+      [(vector? obj) (free-variables (vector->list obj))]
+      [else '()]))
+
 
   (define var<=? (on <= var-idx)))

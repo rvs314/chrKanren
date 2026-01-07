@@ -8,6 +8,7 @@
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
           compose const conjoin disjoin negate on
+          natural?
           and-proc or-proc
           sort merge make-tree=?
           repeatedly
@@ -25,11 +26,16 @@
           singleton? single-out
           find-subtree
           false-map
-          vector-exists vector-fold)
+          vector-exists vector-fold
+          snoc rdc rac rdc+rac
+          proccall
+          zippers
+          remove-duplicates)
   (import (rnrs)
           (srfi :39 parameters)
           (srfi :26 cut)
-          (only (srfi :1 lists) split-at take reduce car+cdr))
+          (only (srfi :1 lists)
+                split-at take reduce car+cdr last drop-right))
 
   (define (and-proc . objs)
     (reduce (lambda (x y) (and x y)) #t objs))
@@ -41,13 +47,13 @@
     (lambda xs
       (for-all (cut apply <> xs) fns)))
 
+  (define natural? (conjoin exact? positive? integer?))
+
   (define (disjoin . fns)
     (lambda xs
       (exists (cut apply <> xs) fns)))
 
-  (define (negate proc)
-    (lambda xs
-      (not (apply proc xs))))
+  (define negate (cut compose not <>))
 
   (define (const . xs)
     (lambda _
@@ -145,6 +151,8 @@
   (define (find-subtree pred? tree)
     (cond
       [(pred? tree) tree]
+      [(vector? tree)
+       (vector-exists (lambda (o) (find-subtree pred? o)) tree)]
       [(pair? tree) (or (find-subtree pred? (car tree))
                         (find-subtree pred? (cdr tree)))]
       [else #f]))
@@ -312,4 +320,31 @@
     (let loop ([i 0])
       (and (< i (vector-length vec))
            (or (pred (vector-ref vec i))
-               (loop (+ 1 i)))))))
+               (loop (+ 1 i))))))
+
+  (define (snoc rdc rac) (append rdc (list rac)))
+  (define rac last)
+  (define (rdc lst) (drop-right lst 1))
+  (define (rdc+rac lst)
+    (let-values ([(rdc rac.null) (split-at lst (- (length lst) 1))])
+      (values rdc (car rac.null))))
+
+  (define (proccall fn . args) (apply fn args))
+
+  (define (zippers xs)
+    (let loop ([left '()]
+               [right xs])
+      (if (null? right)
+          (list)
+          (cons (list left (car right) (cdr right))
+                (loop (cons (car right) left)
+                      (cdr right))))))
+
+  (define (remove-duplicates lst)
+    (define seen-so-far (make-equal-hashtable))
+    (filter
+     (lambda (obj)
+       (and (not (hashtable-contains? seen-so-far obj))
+            (begin (hashtable-set! seen-so-far obj #t)
+                   #t)))
+     lst)))

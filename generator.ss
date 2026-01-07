@@ -17,7 +17,6 @@
           (chrKanren varmap)
           (chrKanren state)
           (srfi :39 parameters)
-          (srfi :26 cut)
           (srfi :27 random-bits))
 
   (define-syntax weight (syntax-rules ()))

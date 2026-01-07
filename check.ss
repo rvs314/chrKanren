@@ -4,7 +4,7 @@
   (export check
           &failed-check make-failed-check failed-check?
           failed-check-results)
-  (import (rnrs))
+  (import (rnrs) (chrKanren utils))
 
   (define-condition-type &failed-check &violation
     make-failed-check failed-check?
@@ -57,4 +57,45 @@
            (raise-continuable
             (fail-check msg 'fact `((fact . ,fact-value) (more . ,more) ...)))))]
       [(check we)
-       (check we #f)])))
+       (check we #f)]))
+
+  (define-syntax define-check-helper
+    (syntax-rules ()
+      [(define-check-helper
+         (name argname ...)
+         ()
+         result?
+         (check-call ...)
+         (body ...))
+       (define (name argname ...)
+         check-call ...
+         (let-values ([results (begin body ...)])
+           (check (apply result? results) '(return value of name))
+           (apply values results)))]
+      [(define-check-helper
+         (name argname ...)
+         ([arg contract] more ...)
+         result?
+         (check-call ...)
+         (body ...))
+       (define-check-helper
+         (name argname ... arg)
+         (more ...)
+         result?
+         (check-call ... (check (contract arg) '(argument arg of name)))
+         (body ...))]
+      [(define-check-helper
+         (name argname ...)
+         (arg more ...)
+         result?
+         (check-call ...)
+         (body ...))
+       (define-check-helper
+         (name argname ... arg)
+         (more ...)
+         result?
+         (check-call ...)
+         (body ...))]))
+
+  (define-syntax-rule (define-check (name arg ...) result? body ...)
+    (define-check-helper (name) (arg ...) result? () (body ...))))

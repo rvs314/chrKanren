@@ -53,9 +53,32 @@
              (vector-exists
               (lambda (el) (subterm? needle el vm))
               haystack))
-        (let ([v0 (walk haystack vm)])
-          (and (not (eq? haystack v0))
-               (subterm? needle v0 vm)))))
+        (and (var? haystack)
+             (let ([v0 (walk haystack vm)])
+               (and (not (eq? haystack v0))
+                    (subterm? needle v0 vm))))))
+
+  ;; This version of subterm is particularly anxious,
+  ;; and therefore keeps a table of what it's seen so far.
+  ;; If `haystack` is proven to be cyclic, then it raises an error.
+  #;(define (subterm? needle haystack vm)
+      (define seen-table (make-equal-hashtable))
+      (define (subterm? needle haystack vm)
+        (if (hashtable-ref seen-table haystack #f)
+            (error 'subterm? "Detected a cyclic term" haystack)
+            (hashtable-set! seen-table haystack #t))
+        (or (eq? needle haystack)
+            (and (pair? haystack)
+                 (or (subterm? needle (car haystack) vm)
+                     (subterm? needle (cdr haystack) vm)))
+            (and (vector? haystack
+                   (vector-exists
+                    (lambda (el) (subterm? needle el vm))
+                    haystack))
+              (let ([v0 (walk haystack vm)])
+                (and (not (eq? haystack v0))
+                     (subterm? needle v0 vm))))))
+      (subterm? needle haystack vm))
 
   (define (extend var val vm)
     (and (not (subterm? var val vm))

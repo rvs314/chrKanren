@@ -7,7 +7,7 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
 (library (chrKanren numerals)
   (export build-num zeroo poso >1o
           pluso minuso *o /o <o <=o logo expo)
-  (import (rnrs) (only (rnrs r5rs) quotient) (chrKanren base))
+  (import (rnrs) (chrKanren base) (chrKanren utils))
 
   (define-relation (appendo l s out)
     (conde
@@ -17,15 +17,12 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
         (== `(,a . ,res) out)
         (appendo d s res))]))
 
-  (define build-num
-    (lambda (n)
-      (cond
-        ((odd? n)
-         (cons 1 (build-num (quotient (- n 1) 2))))
-        ((and (not (zero? n)) (even? n))
-         (cons 0 (build-num (quotient n 2))))
-        ((zero? n) '()))))
-
+  (define (build-num n)
+    (if (zero? n)
+        '()
+        (let-values ([(d m) (div-and-mod n 2)])
+          (cons m (build-num d)))))
+    
   (define-relation (zeroo n)
     (== '() n))
 

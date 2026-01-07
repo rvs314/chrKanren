@@ -25,7 +25,7 @@
    [(== animal 'gerbil)]
    [(== animal 'rabbit)]))
 
-(define-relation (immediately-smaller a1 a2)
+(define-relation (next-smallesto a1 a2)
   (conde
    [(== a1 'gerbil)  (== a2 'turtle)]
    [(== a1 'turtle)  (== a2 'rabbit)]
@@ -40,7 +40,7 @@
   (conde
    [(== a1 a2)]
    [(fresh (x)
-      (immediately-smaller a1 x)
+      (next-smallesto a1 x)
       (size<=o x a2))]))
 
 (define-test relationo-type
@@ -152,7 +152,7 @@
             ((rabbit))
             ((rabbit)))))
   (check (equal? (run* (p q)
-                   (callo immediately-smaller p q))
+                   (callo next-smallesto p q))
                  '(((gerbil turtle))
                    ((turtle rabbit))
                    ((rabbit chicken))
@@ -162,13 +162,16 @@
                    ((goat pig))
                    ((pig cow)))))
   (check (equal? (run* (p)
-                   (callo immediately-smaller 'cat p))
+                   (callo next-smallesto 'cat p))
                  '(((dog)))))
   (check (equal? (run* (p)
                    (callo size<=o 'cat p))
                  '(((cat)) ((dog)) ((goat)) ((pig)) ((cow)))))
   (check (equal? (run* (p)
                    (applyo size<=o 'cat (list p)))
+                 '(((cat)) ((dog)) ((goat)) ((pig)) ((cow)))))
+  (check (equal? (run* (p)
+                   (callo size<=o 'cat p))
                  '(((cat)) ((dog)) ((goat)) ((pig)) ((cow)))))
   ;; FIXME: This is a dumb restriction: we should be able to infer the arity
   ;; of the relation and force the arglists to unify.

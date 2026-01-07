@@ -27,10 +27,9 @@
                 (run* (p) (animalo p))))
   (for-each
    (lambda (animal)
-     (check (pair? (run* () (animalo animal)))
-            "concrete animal"
-            animal))
-   the-animals))
+     (check (pair? (run* () (animalo animal)))))
+   the-animals)
+  (check (null? (run* () (animalo 'robot)))))
 
 (define-relation (chaino xs ys)
   (fresh (a b c d)
