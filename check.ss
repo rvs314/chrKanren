@@ -3,7 +3,8 @@
 (library (chrKanren check)
   (export check
           &failed-check make-failed-check failed-check?
-          failed-check-results)
+          failed-check-results
+          define-check)
   (import (rnrs) (chrKanren utils))
 
   (define-condition-type &failed-check &violation
@@ -69,20 +70,23 @@
          (body ...))
        (define (name argname ...)
          check-call ...
-         (let-values ([results (begin body ...)])
+         (check (procedure? result?) '(result contract of name))
+         (let-values ([(rs) result?]
+                      [(_) (check (procedure? result?))]
+                      [results (let () body ...)])
            (check (apply result? results) '(return value of name))
            (apply values results)))]
       [(define-check-helper
          (name argname ...)
-         ([arg contract] more ...)
+         ([arg ... contract] more ...)
          result?
          (check-call ...)
          (body ...))
        (define-check-helper
-         (name argname ... arg)
+         (name argname ... arg ...)
          (more ...)
          result?
-         (check-call ... (check (contract arg) '(argument arg of name)))
+         (check-call ... (check (contract arg) '(argument arg of name)) ...)
          (body ...))]
       [(define-check-helper
          (name argname ...)
@@ -97,5 +101,5 @@
          (check-call ...)
          (body ...))]))
 
-  (define-syntax-rule (define-check (name arg ...) result? body ...)
-    (define-check-helper (name) (arg ...) result? () (body ...))))
+  (define-syntax-rule (define-check (name arg ...) result? b body ...)
+    (define-check-helper (name) (arg ...) result? () (b body ...))))
