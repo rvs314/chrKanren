@@ -21,10 +21,10 @@
     (fields subst facts)
     (protocol
      (lambda (new)
-       (lambda (subst facts)
-         (check (varmap? subst))
-         (check (list? facts))
-         (new subst facts)))))
+       (define-check (make-state [subst varmap?] [facts list?])
+         state?
+         (new subst facts))
+       make-state)))
 
   (define empty-state
     (make-state empty-varmap '()))
@@ -34,17 +34,15 @@
              (on equal? state-subst)
              (on equal? state-facts)))
 
-  ;; State -> Constraint -> (Var -> Bool)
-  ;;   -> (Listof Constraint)
-  ;;   -> (Listof (Cons Varmap Constraint))
   ;; For a given state and a constraint with metalogical variables satisfying
   ;; a given predicate which are not in the nogood list,
   ;; return: the set of "ground" varmaps which satisfy the constraint
   ;;         their witnesses in the database.
-  (define (query-constraint state constraint metavar? nogood)
-    (check (constraint? constraint))
-    (check (state? state))
-    (check (procedure? metavar?))
+  (define-check (query-constraint [state state?]
+                                  [constraint constraint?]
+                                  [metavar? procedure?]
+                                  [nogood (listof constraint?)])
+    (listof (pairof varmap? constraint?))
     (cond
       [(scheme-check? constraint)
        (let-values ([(pred . objs)
@@ -65,10 +63,8 @@
             (cons vm other)))
         (state-facts state))]))
 
-  ;; State -> (or Constraint (Listof Constraint)) -> (or #f State)
-  (define (constrain state cs)
-    (check (state? state))
-    (check ((disjoin constraint? (listof constraint?)) cs))
+  (define-check (constrain [state state?] [cs (disjoin constraint? (listof constraint?))])
+    (disjoin not state?)
     (let* ([cs (if (constraint? cs) (list cs) cs)]
            [cs (filter
                 (lambda (c)
@@ -89,8 +85,10 @@
                         [(state1) (and subst (make-state subst facts))])
             state1))))
 
-  ;; Constraint -> Constraint -> Varmap -> Var? -> (or Varmap #f)
-  (define (unify-constraint lcon rcon vmap var?)
+  (define-check (unify-constraint [lcon rcon constraint?]
+                                  [vmap varmap?]
+                                  [var? procedure?])
+    (disjoin not varmap?)
     (and (eq? (constraint-constructor lcon)
               (constraint-constructor rcon))
          (unify (constraint-operands lcon)
@@ -98,33 +96,29 @@
                 vmap
                 var?)))
 
-  (define (rule-var? rule)
-    (check (rule? rule))
+  (define-check (rule-var? [rule rule?])
+    procedure?
     (lambda (vr)
       (memq vr (rule-free-variables rule))))
 
-  ;; Rule -> Varmap -> Goal
-  (define (instantiate-consequences rule vmap)
+  (define-check (instantiate-consequences [rule rule?] [vmap varmap?])
+    goal?
     (apply (rule-consequences rule)
            (walk* (rule-free-variables rule) vmap)))
 
-  ;; State -> List Constraint -> State
-  (define (retract state witnesses)
-    (check (state? state))
-    (check ((listof constraint?) witnesses))
+  (define-check (retract [state state?] [witnesses (listof constraint?)])
+    state?
     (make-state
      (state-subst state)
      (filter (lambda (c) (not (memq c witnesses)))
              (state-facts state))))
 
-  ;; State -> Rule -> (or #f (Pairof Goal (Listof Constraint)))
-  (define (apply-rule state rule)
-    ;; Varmap -> Listof Posting -> Listof Constraint ->
-    ;; (or #f (Pairof Varmap (Listof Constraint)))
-    (define (find-assignment vmap prereqs seen)
-      (check (varmap? vmap) "find-assignment")
-      (check ((listof posting?) prereqs))
-      (check ((listof constraint?) seen))
+  (define-check (apply-rule [state state?] [rule rule?])
+    (disjoin not (pairof goal? (listof constraint?)))
+    (define-check (find-assignment [vmap varmap?]
+                                   [prereqs (listof posting?)]
+                                   [seen (listof constraint?)])
+      (disjoin not (pairof varmap? (listof constraint?)))
 
       (if (null? prereqs)
           (cons vmap '())
@@ -145,34 +139,20 @@
                         (cons (car varmap^.witnesses)
                               (cons witness (cdr varmap^.witnesses)))))
                     potential-inst))))
-    (check (state? state))
-    (check (rule? rule))
+    (and-let* ([as (find-assignment
+                    (state-subst state)
+                    (rule-prereqs rule)
+                    '())]
+               [consq (instantiate-consequences rule (car as))])
+      (cons consq (cdr as))))
 
-    (let ([as (find-assignment
-               (state-subst state)
-               (rule-prereqs rule)
-               '())])
-      (and as (cons (instantiate-consequences rule (car as))
-                    (cdr as)))))
-
-  (define (contains? needle haystack)
-    (find-subtree (lambda (subtree) (equal? needle subtree)) haystack))
-
-  ;; State -> Listof Var -> (Values (Listof Term) (Listof Constraint))
-  (define (query state arguments)
-    (define (relevant? vars)
-      (lambda (fact)
-        (exists (lambda (arg) (exists (lambda (op) (contains? arg op))
-                                      (constraint-operands fact)))
-                vars)))
-    (define (walk*-arguments con)
-      (check (constraint? con))
+  (define-check (query [state state?] [args (listof var?)])
+    (arguments list? (listof constraint?))
+    (define-check (walk*-arguments [con constraint?])
+      constraint?
       (make-constraint (constraint-constructor con)
                        (constraint-reifier con)
                        (map (lambda (a) (walk* a (state-subst state)))
                             (constraint-operands con))))
-    (check (state? state))
-    (check ((listof var?) arguments))
-
-    (values (walk* arguments (state-subst state))
+    (values (walk* args (state-subst state))
             (map walk*-arguments (state-facts state)))))
