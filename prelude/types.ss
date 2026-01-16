@@ -23,10 +23,10 @@
   (define-constraint (typeo obj name _pred _prop)
     (list name obj))
 
-  (define (symbolo obj)   (typeo obj 'sym symbol?    succeed))
-  (define (numbero obj)   (typeo obj 'num number?    succeed))
-  (define (stringo obj)   (typeo obj 'str string?    succeed))
-  (define (relationo obj) (typeo obj 'rel procedure? succeed))
+  (define (symbolo obj)   (typeo obj 'sym symbol?    #f))
+  (define (numbero obj)   (typeo obj 'num number?    #f))
+  (define (stringo obj)   (typeo obj 'str string?    #f))
+  (define (relationo obj) (typeo obj 'rel procedure? #f))
 
   (define (callo rel . args)
     (applyo rel args))
