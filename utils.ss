@@ -19,7 +19,7 @@
           add1 sub1
           fixpoint
           begin0
-          treeof pairof listof
+          treeof pairof listof arguments
           tuple->pair pair->tuple
           symbol
           group-by
@@ -235,6 +235,11 @@
   (define (listof elem?)
     (lambda (x)
       (and (list? x) (for-all elem? x))))
+
+  (define (arguments . tests)
+    (lambda args
+      (and (equal? (length args) (length tests))
+           (for-all proccall tests args))))
 
   (define (treeof elem?)
     (define (matches? obj)
