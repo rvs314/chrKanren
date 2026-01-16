@@ -29,8 +29,7 @@
           vector-exists vector-fold
           snoc rdc rac rdc+rac
           proccall
-          zippers
-          remove-duplicates)
+          zippers)
   (import (rnrs)
           (srfi :39 parameters)
           (srfi :26 cut)
@@ -338,13 +337,4 @@
           (list)
           (cons (list left (car right) (cdr right))
                 (loop (cons (car right) left)
-                      (cdr right))))))
-
-  (define (remove-duplicates lst)
-    (define seen-so-far (make-equal-hashtable))
-    (filter
-     (lambda (obj)
-       (and (not (hashtable-contains? seen-so-far obj))
-            (begin (hashtable-set! seen-so-far obj #t)
-                   #t)))
-     lst)))
+                      (cdr right)))))))
