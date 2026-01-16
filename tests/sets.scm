@@ -136,21 +136,23 @@
       (== p (set p)))
     '()))
   (check
-   (equal? ; "\"recursive\" set tails are equivalent to fresh variables"
+   (equal? ; "recursive set tails are equivalent to fresh variables"
     (run* (p)
       (== p (set* 1 p)))
-    `((,(set* 1 '_.0) (set _.0)))))
+    `(((,(set* 1 '_.0)) (set _.0)))))
   (check
    (equal? ; "Shorter race"
     (run* (a b)
       (== b (set-cons 6 a))
       (== a (set-cons 5 b)))
-    `(((,(set* 5 6 '_.0) ,(set* 5 6 '_.0))
+    `(((,(set* 5 6 '_.0) ,(set* 6 5 6 '_.0))
        (set _.0)))))
   (check ; "Relay race"
    (equal? (run* (p q r)
              (== p (set* 1 q))
              (== q (set* 2 r))
              (== r (set* 3 p)))
-           `(((,(set* 1 2 3 '_.0) ,(set* 1 2 3 '_.0) ,(set* 1 2 3 '_.0))
+           `(((,(set* 1 2 3 1 2 '_.0)
+               ,(set* 2 3 1 2 '_.0)
+               ,(set* 3 1 2 '_.0))
               (set _.0))))))

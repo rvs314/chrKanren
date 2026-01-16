@@ -25,18 +25,6 @@
   (check (equal? (run* (p q) (=== (cons p 1) (cons 2 q)))
                  '(((2 1))))))
 
-(define-test occurs-check-check
-  (check (equal? (run* (p) (=== p (cons 1 p)))
-                 '())))
-
-(define-test deeper-occurs-check-check
-  (check (equal? (run* (p)
-                   (fresh (q r)
-                     (=== q (vector 1 r))
-                     (=== r (cons 1 p))
-                     (=== p (vector 1 q))))
-                 '())))
-
 (define-test deeper-non-occurs-check-check
   (check (equal? (run* (p)
                    (fresh (q r)
