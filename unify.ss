@@ -13,16 +13,24 @@
     (case-lambda
       [(obj vm)
        (walk* obj vm var?)]
-      [(obj vm var?)
-       (cond
-         [(pair? obj) (cons (walk* (car obj) vm var?) (walk* (cdr obj) vm var?))]
-         [(vector? obj) (vector-map (lambda (obj) (walk* obj vm var?)) obj)]
-         [(var? obj)
-          (let ([rs (walk obj vm var?)])
-            (if (var? rs)
-                rs
-                (walk* rs vm var?)))]
-         [else obj])]))
+      [(obj vm metavar?)
+       ;; TODO: get a better datastructure for this
+       (let loop ([obj obj] [seen (make-eq-hashtable)])
+         (cond
+           [(pair? obj)
+            (cons (loop (car obj) seen)
+                  (loop (cdr obj) seen))]
+           [(vector? obj)
+            (vector-map (lambda (obj) (loop obj seen)) obj)]
+           [(metavar? obj)
+            (if (hashtable-contains? seen obj)
+                obj
+                (let ([ht^ (hashtable-copy seen #t)])
+                  (hashtable-set! ht^ obj #t)
+                  (loop (walk obj vm metavar?) ht^)))]
+           [(atom? obj) obj]
+           [(var? obj) obj] ;; mvar? ≠ var? in some cases
+           [else (error 'walk* "I'm not sure what this is" obj)]))]))
 
   (define walk
     (case-lambda
@@ -81,8 +89,7 @@
       (subterm? needle haystack vm))
 
   (define (extend var val vm)
-    (and (not (subterm? var val vm))
-         (varmap-extend var val vm)))
+    (varmap-extend var val vm))
 
   (define unify*
     (case-lambda
