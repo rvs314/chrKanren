@@ -6,7 +6,7 @@
           set-cons set-pair? set-first set-rest
           set?
           set-head set-tail
-          list->set set set*
+          list->set set set* make-set
           set-nullo set-conso seto ino)
   (import (rnrs)
           (chrKanren vars)
@@ -52,9 +52,11 @@
         (set-tail (set-rest st))
         st))
 
-  (define (list->set lst)
-    (check (list? lst) 'list->set)
-    (fold-right set-cons set-nil lst))
+  (define (make-set head tail)
+    (check (list? head) 'make-set)
+    (fold-right set-cons tail head))
+
+  (define (list->set lst) (make-set lst set-nil) )
 
   (define (set . xs) (list->set xs))
 
@@ -169,4 +171,37 @@
               t1..m
               (append t^j-1..0 (list t^j) t^j+1..n)
               N))])))
-     (zippers ts^))))
+     (zippers ts^)))
+
+  (define-rules
+    (forall (x rs z)
+      (occurs-checko x (cons set-nil rs) z)
+      <=>
+      (occurs-checko x rs z))
+    (forall (x t rs z)
+      (occurs-checko x (cons (set-cons x t) rs) z)
+      <=>
+      fail)
+    (forall (x rs z)
+      (occurs-checko x rs z)
+      (ground set-pair? z)
+      (scheme (lambda (x z) (eq? x (set-tail z))) x z)
+      <=>
+      (fresh (N)
+        (seto N)
+        (occurs-checko x (set-head z) (make-set (set-head z) N))))
+    (forall (x h t rs z)
+      (occurs-checko x (cons (set-cons h t) rs) z)
+      (scheme (negate set-pair?) z)
+      (scheme (negate eq?) x h)
+      (scheme (negate eq?) x t)
+      <=>
+      (occurs-checko x (cons* h t rs) z))
+    (forall (x h t rs z)
+      (occurs-checko x (cons (set-cons h t) rs) z)
+      (ground set-pair? z)
+      (scheme (lambda (x z) ((negate eq?) x (set-tail z))) x z)
+      (scheme (negate eq?) x h)
+      (scheme (negate eq?) x t)
+      <=>
+      (occurs-checko x (cons* h t rs) z))))
