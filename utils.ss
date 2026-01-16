@@ -233,16 +233,21 @@
              (compose cdr? cdr)))
 
   (define (listof elem?)
-    (disjoin null?
-             (pairof elem? (eta (listof elem?)))))
+    (lambda (x)
+      (and (list? x) (for-all elem? x))))
 
   (define (treeof elem?)
-    (disjoin elem?
-             (pairof (eta (treeof elem?)) (eta (treeof elem?)))))
+    (define (matches? obj)
+      (or (elem? obj)
+          (and (pair? obj)
+               (matches? (car obj))
+               (matches? (cdr obj)))))
+    matches?)
 
   (define atom?
     (disjoin null? number? string? char?
-             boolean? symbol? bytevector?))
+             boolean? symbol? bytevector?
+             procedure?))
 
   (define (fixpoint step finished? start0 . start)
     (let-values ([next (apply step start0 start)])
@@ -300,7 +305,7 @@
         obj))
 
   (define (false-map proc . objs)
-    (and (not (exists not objs))
+    (and (for-all values objs)
          (apply proc objs)))
 
   (define (vector-fold proc init v . vs)
