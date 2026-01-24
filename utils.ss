@@ -29,8 +29,10 @@
           vector-exists vector-fold
           snoc rdc rac rdc+rac
           proccall
-          zippers)
+          zippers
+          copy-object replace-in-object!)
   (import (rnrs)
+          (rnrs mutable-pairs)
           (srfi :39 parameters)
           (srfi :26 cut)
           (only (srfi :1 lists)
@@ -347,4 +349,31 @@
           (list)
           (cons (list left (car right) (cdr right))
                 (loop (cons (car right) left)
-                      (cdr right)))))))
+                      (cdr right))))))
+
+  (define (copy-object obj)
+    (cond
+      [(pair? obj) (cons (copy-object (car obj))
+                         (copy-object (cdr obj)))]
+      [(vector? obj) (vector-map copy-object obj)]
+      [else obj]))
+
+  ;; Mutate ~obj~ such that each subterm which is ~eq?~ to ~from~ is now ~to~.
+  ;; Returns ~obj~, which is mutated in-place.
+  (define (replace-in-object! obj from to)
+    (cond
+      [(pair? obj)
+       (if (eq? (car obj) from)
+           (set-car! obj to)
+           (replace-in-object! (car obj) from to))
+       (if (eq? (cdr obj) from)
+           (set-cdr! obj to)
+           (replace-in-object! (cdr obj) from to))]
+      [(vector? obj)
+       (let loop ([i 0])
+         (when (< i (vector-length obj))
+           (if (eq? (vector-ref obj i) from)
+               (vector-set! obj i to)
+               (replace-in-object! (vector-ref obj i) from to))
+           (loop (+ i 1))))])
+    obj))

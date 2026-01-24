@@ -184,7 +184,13 @@
      [()    '()]
      [()    (- (random-integer 100) 50)]
      [()    (random-var)]
-     [(l r) (cons (value-generator l) (value-generator r))]))
+     [(l r) (cons (value-generator l) (value-generator r))]
+     [(l r) (let ([vs (make-vector l)])
+              (let loop ([i 0])
+                (when (< i l)
+                  (vector-set! vs i (value-generator (div r l)))
+                  (loop (+ i 1))))
+              vs)]))
 
   (define (state-generator . xs)
     (make-state (apply varmap-generator xs) '())))

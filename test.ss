@@ -93,7 +93,8 @@
                          (map cons
                               '(nm ...)
                               (list nm ...)))))]]
-             body body* ...))
+             (let ()
+               body body* ...)))
          (define (run-test test-cont)
            (report "Running " 'name "...")
            (guard [e [else (report-condition e)]]

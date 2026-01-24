@@ -1,6 +1,5 @@
 #!r6rs
 
-
 (library (chrKanren prelude sets)
   (export set-nil ∅ set-null?
           set-cons set-pair? set-first set-rest

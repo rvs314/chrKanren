@@ -3,6 +3,7 @@
 (import (rnrs)
         (chrKanren check)
         (chrKanren test)
+        (chrKanren generator)
         (chrKanren utils)
         (only (srfi :1 lists)
               list-tabulate pair-fold pair-fold-right
@@ -137,3 +138,16 @@
                               (caddr zp))
                       long-list)))
      zs)))
+
+(define-test (copy-object-test [obj value-generator])
+  (define copy (copy-object obj))
+  (check (equal? copy obj))
+  (when (or (vector? copy) (pair? copy))
+    (check (not (eq? copy obj)))))
+
+(define-test replace-in-object-test
+  (define obj '(foobar baz (bing #(bang baz))))
+  (check (eq? obj (replace-in-object! obj 'baz "baz")))
+  (check (equal? obj '(foobar "baz" (bing #(bang "baz")))))
+  (replace-in-object! obj 'bing obj)
+  (check (equal? obj `(foobar "baz" (,obj #(bang "baz"))))))

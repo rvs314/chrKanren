@@ -6,6 +6,7 @@
           fresh === == conj disj
           conde succeed fail
           run run*
+          reifying
           =/= symbolo numbero stringo absento)
   (import (rnrs)
           (chrKanren vars)

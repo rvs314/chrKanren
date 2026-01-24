@@ -1,6 +1,9 @@
 #!r6rs
 
-(import (rnrs) (except (chrKanren base) run run*) (chrKanren tests fmk shim))
+(import (rnrs)
+        (except (chrKanren base) run run*)
+        (chrKanren test)
+        (chrKanren tests fmk shim))
 
 ;; Tests for general absento, where the first argument isn't a ground atom.
 
@@ -294,12 +297,14 @@
       (== q `(3 . (,b . ,b)))))
   '((3 _.0 . _.0)))
 
-(test "test 45b"
-  (run* (q)
-    (fresh (a b)
-      (absento `(,a . ,b) q)
-      (== q `(,a 3 . (,b . ,b)))))
-  '(((_.0 3 _.1 . _.1) (=/= ((_.0 _.1))))))
+(define-test test-45b
+  (test-count 0)
+  (check (equal?
+          (run* (q)
+            (fresh (a b)
+              (absento `(,a . ,b) q)
+              (== q `(,a 3 . (,b . ,b)))))
+          '(((_.0 3 _.1 . _.1) (=/= ((_.0 _.1))))))))
 
 (test "test 46"
   (run* (q)

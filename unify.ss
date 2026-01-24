@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren unify)
-  (export walk walk* unify unify* square-varmap subterm?)
+  (export walk canonical-var walk* unify unify* square-varmap subterm?)
   (import (rnrs)
           (except (srfi :1 lists) for-each assoc map fold-right member find filter partition remove car+cdr)
           (chrKanren utils)
@@ -9,41 +9,50 @@
           (chrKanren varmap)
           (chrKanren vars))
 
-  (define walk*
-    (case-lambda
-      [(obj vm)
-       (walk* obj vm var?)]
-      [(obj vm metavar?)
-       ;; TODO: get a better datastructure for this
-       (let loop ([obj obj] [seen (make-eq-hashtable)])
-         (cond
-           [(pair? obj)
-            (cons (loop (car obj) seen)
-                  (loop (cdr obj) seen))]
-           [(vector? obj)
-            (vector-map (lambda (obj) (loop obj seen)) obj)]
-           [(metavar? obj)
-            (if (hashtable-contains? seen obj)
-                obj
-                (let ([ht^ (hashtable-copy seen #t)])
-                  (hashtable-set! ht^ obj #t)
-                  (loop (walk obj vm metavar?) ht^)))]
-           [(atom? obj) obj]
-           [(var? obj) obj] ;; mvar? ≠ var? in some cases
-           [else (error 'walk* "I'm not sure what this is" obj)]))]))
+  (define-syntax-rule (define-walk (name obj vm metavar?)
+                        body ...)
+    (define name
+      (case-lambda
+        [(obj vm) (name obj vm var?)]
+        [(obj vm metavar?) body ...])))
 
-  (define walk
-    (case-lambda
-      [(obj vm)
-       (walk obj vm var?)]
-      [(obj vm var?)
-       (let walk ([obj obj])
-         (if (var? obj)
-             (let ([v0 (varmap-lookup obj vm)])
-                 (if (eq? v0 obj)
-                     obj
-                     (walk v0)))
-             obj))]))
+  (define-walk (walk obj vm var?)
+    (let walk ([obj obj])
+      (if (var? obj)
+          (let ([v0 (varmap-lookup obj vm)])
+            (if (eq? v0 obj)
+                obj
+                (walk v0)))
+          obj)))
+
+  (define-walk (canonical-var vr vm var?)
+    (check (var? vr))
+    (let canonical-var ([vr vr])
+      (define next (varmap-lookup vr vm))
+      (cond
+        [(eq? vr next) next]
+        [(var? next)     (canonical-var next)]
+        [else            vr])))
+
+  (define-walk (walk* obj vm metavar?)
+    ;; TODO: get a better datastructure for this
+    (let loop ([obj obj]
+               [seen (make-eq-hashtable)])
+      (cond
+        [(pair? obj)
+         (cons (loop (car obj) seen)
+               (loop (cdr obj) seen))]
+        [(vector? obj)
+         (vector-map (lambda (obj) (loop obj seen)) obj)]
+        [(metavar? obj)
+         (let* ([cv (canonical-var obj vm metavar?)])
+           (if (hashtable-contains? seen cv)
+               cv
+               (let ([ht^ (hashtable-copy seen #t)])
+                 (hashtable-set! ht^ cv #t)
+                 (loop (varmap-lookup cv vm) ht^))))]
+        [(or (atom? obj) (var? obj)) obj]
+        [else (error 'walk* "I'm not sure what this is" obj)])))
 
   (define (square-varmap vm)
     (check (varmap? vm))

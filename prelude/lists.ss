@@ -71,20 +71,21 @@
         (== zs (cons x zss))
         (append2o xss ys zss))]))
 
-  (define (fold-lefto patho start edge1 . edges+finish)
-    (let-values ([(finish edges*)
-                  (ref-and-remove (length edges+finish)
-                                  (cons edge1 edges+finish))])
-      (fold-left*o patho start edges* finish)))
-
   (define-relation (fold-left*o patho start edges* finish)
     (conde
-     [(map-nullo edges*) (== start finish)]
+     [(map-nullo edges*)
+      (== start finish)]
      [(fresh (e1s ess arglist step)
         (map-conso e1s ess edges*)
         (append2o (cons start e1s) (list step) arglist)
         (applyo patho arglist)
         (fold-left*o patho step ess finish))]))
+
+  (define (fold-lefto patho start edge1 . edges+finish)
+    (let-values ([(finish edges*)
+                  (ref-and-remove (length edges+finish)
+                                  (cons edge1 edges+finish))])
+      (fold-left*o patho start edges* finish)))
 
   (define-relation (for-all*o rel arg*)
     (conde
@@ -105,9 +106,9 @@
        [(exists*o rel gss)])))
 
   (define (existso rel . args*)
-    (for-all*o rel args*))
+    (exists*o rel args*))
 
-  (define-relation (append*o xs* rs)
+  (define (append*o xs* rs)
     (fold-lefto append2o '() xs* rs))
 
   (define (appendo lst . lsts+res)

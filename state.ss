@@ -2,12 +2,13 @@
 
 (library (chrKanren state)
   (export empty-state state state?
-          constrain make-state query
+          constrain make-state
           apply-rule retract
           state=? state-facts state-subst)
   (import (rnrs)
           (only (srfi :1 lists) filter-map)
           (srfi :2 and-let*)
+          (rnrs mutable-pairs)
           (chrKanren utils)
           (chrKanren check)
           (chrKanren goals)
@@ -144,15 +145,4 @@
                     (rule-prereqs rule)
                     '())]
                [consq (instantiate-consequences rule (car as))])
-      (cons consq (cdr as))))
-
-  (define-check (query [state state?] [args (listof var?)])
-    (arguments list? (listof constraint?))
-    (define-check (walk*-arguments [con constraint?])
-      constraint?
-      (make-constraint (constraint-constructor con)
-                       (constraint-reifier con)
-                       (map (lambda (a) (walk* a (state-subst state)))
-                            (constraint-operands con))))
-    (values (walk* args (state-subst state))
-            (map walk*-arguments (state-facts state)))))
+      (cons consq (cdr as)))))
