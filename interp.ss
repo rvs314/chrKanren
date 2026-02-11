@@ -12,7 +12,6 @@
           (chrKanren streams)
           (chrKanren relation)
           (chrKanren state)
-          (chrKanren debug)
           (srfi :2 and-let*)
           (srfi :39 parameters))
 
