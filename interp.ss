@@ -16,9 +16,8 @@
           (srfi :2 and-let*)
           (srfi :39 parameters))
 
-  ;; State -> Stream
-  (define (propagate-constraints state)
-    (check (state? state))
+  (define-check (propagate-constraints [state state?])
+    stream?
     (or (exists
          (lambda (rule)
            (check (rule? rule))
@@ -63,7 +62,7 @@
       [(posting? gl)
        (let ([s1 (constrain st (posting-constraint gl))])
          (if s1
-             (step (propagate-constraints s1))
+             (propagate-constraints s1)
              empty-stream))]
       [else
        (check #f "Not sure how to start goal" st gl)]))
@@ -79,17 +78,17 @@
            [(empty? s1) s2]
            [(solution? s1)
             (make-solution (solution-first s1)
-                           (make-choice s2 (solution-rest s1)))]
+                           (make-choice (solution-rest s1) s2))]
            [else (make-choice s2 s1)]))]
       [(propagating? strm)
        (let ([s (age (propagating-stream strm))])
          (cond
            [(empty? s) s]
            [(and (solution? s) (empty? (solution-rest s)))
-            (step (propagate-constraints (solution-first s)))]
+            (propagate-constraints (solution-first s))]
            [(solution? s)
-            (step (make-choice (propagate-constraints (solution-first s))
-                               (make-propagating (solution-rest s))))]
+            (make-choice (propagate-constraints (solution-first s))
+                         (make-propagating (solution-rest s)))]
            [else (make-propagating s)]))]
       [(bind? strm)
        (let ([s (age (bind-stream strm))]

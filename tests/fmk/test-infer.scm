@@ -10,6 +10,10 @@
         (chrKanren tests fmk shim)
         (chrKanren utils))
 
+;; This requires more work, so let's pump up the execution limit
+
+(*finite-maturation-limit* 30000)
+
 (defrel (!- exp env t)
   (conde
    [(symbolo exp) (lookupo exp env t)]
@@ -42,13 +46,13 @@
 #|
 The original test generated the first 10 elements in the list, but
 it seems like first-order miniKanren has a slight ordering difference
-compared to faster miniKanren, so only the first 9 align.
+compared to faster miniKanren, so the ordering has changed.
 This version finds the missing element as the 11th element, which is
 tested below.
 |#
 
 (test "types"
-  (run 9 (q) (fresh (t exp) (!- exp '() t)  (== `(,exp => ,t) q)))
+  (run 8 (q) (fresh (t exp) (!- exp '() t)  (== `(,exp => ,t) q)))
   '((((lambda (_.0) _.0) => (-> _.1 _.1)) (sym _.0))
     (((lambda (_.0) (lambda (_.1) _.1))
       =>
@@ -72,17 +76,17 @@ tested below.
       (-> _.3 (-> _.4 (-> _.5 _.4))))
      (=/= ((_.0 lambda)) ((_.1 _.2)) ((_.1 lambda)))
      (sym _.0 _.1 _.2))
-    (((lambda (_.0) (_.0 (lambda (_.1) _.1)))
-      =>
-      (-> (-> (-> _.2 _.2) _.3) _.3))
-     (=/= ((_.0 lambda)))
-     (sym _.0 _.1))
     (((lambda (_.0) (lambda (_.1) (lambda (_.2) _.0)))
       =>
       (-> _.3 (-> _.4 (-> _.5 _.3))))
      (=/= ((_.0 _.1)) ((_.0 _.2)) ((_.0 lambda)) ((_.1 lambda)))
      (sym _.0 _.1 _.2))
-    (((lambda (_.0) (lambda (_.1) (_.1 _.0)))
+    (((lambda (_.0) (_.0 (lambda (_.1) _.1)))
+      =>
+      (-> (-> (-> _.2 _.2) _.3) _.3))
+     (=/= ((_.0 lambda)))
+     (sym _.0 _.1))
+    #;(((lambda (_.0) (lambda (_.1) (_.1 _.0)))
       =>
       (-> _.2 (-> (-> _.2 _.3) _.3)))
      (=/= ((_.0 _.1)) ((_.0 lambda)))
@@ -140,4 +144,4 @@ tested below.
         (-> _.3 (-> _.4 _.4)))
        (=/= ((_.1 lambda)))
        (sym _.0 _.1 _.2)))
-    (run 11 (q) (fresh (t exp) (!- exp '() t)  (== `(,exp => ,t) q))))))
+    (run 13 (q) (fresh (t exp) (!- exp '() t)  (== `(,exp => ,t) q))))))

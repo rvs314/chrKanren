@@ -6,7 +6,8 @@
           for-allo for-all*o
           existso exists*o
           appendo append*o
-          assoco lookupo)
+          assoco lookupo
+          membero)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren base)
@@ -129,4 +130,9 @@
   (define-relation (lookupo key alist res)
     (fresh (pr)
       (assoco key alist pr)
-      (cdro pr res))))
+      (cdro pr res)))
+
+  (define-relation (membero el lst)
+    (fresh (a d)
+      (== lst (cons a d))
+      (disj (== el a) (membero el d)))))

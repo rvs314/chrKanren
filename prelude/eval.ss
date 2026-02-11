@@ -17,7 +17,8 @@
   (define-relation (evalo tm nv rs)
     (conde
      [(numbero tm) (== tm rs)]
-     [(== tm `(quote ,rs))]
+     [(== tm `(quote ,rs))
+      (disj (symbolo rs) (== rs '()))]
      [(symbolo tm) (lookupo tm nv rs)]
      [(fresh (a d ra rd)
         (== tm `(cons ,a ,d))

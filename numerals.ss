@@ -6,7 +6,7 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
 
 (library (chrKanren numerals)
   (export build-num zeroo poso >1o
-          pluso minuso *o /o <o <=o logo expo)
+          pluso minuso *o timeso /o divo <o <=o logo expo)
   (import (rnrs) (chrKanren base) (chrKanren utils))
 
   (define-relation (appendo l s out)
@@ -71,6 +71,7 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
       (full-addero d a b c e)
       (addero e x y z)))
 
+
   (define-relation (pluso n m k)
     (addero 0 n m k))
 
@@ -96,6 +97,8 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
         (== `(1 . ,x) n) (poso x)
         (== `(1 . ,y) m) (poso y)
         (odd-*o x n m p)))))
+
+  (define timeso *o)
 
   (define-relation (odd-*o x n m p)
     (fresh (q)
@@ -174,6 +177,8 @@ This is a copy of the numeral implementation from Michael Ballantyne's faster-mi
           (minuso qlmr nl rr)
           (splito rr r '() rh)
           (/o nh m qh rh)))))))
+
+  (define divo /o)
 
   (define-relation (splito n r l h)
     (conde

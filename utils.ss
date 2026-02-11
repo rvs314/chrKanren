@@ -30,7 +30,8 @@
           snoc rdc rac rdc+rac
           proccall
           zippers
-          copy-object replace-in-object!)
+          copy-object replace-in-object!
+          named-lambda)
   (import (rnrs)
           (rnrs mutable-pairs)
           (srfi :39 parameters)
@@ -376,4 +377,8 @@
                (vector-set! obj i to)
                (replace-in-object! (vector-ref obj i) from to))
            (loop (+ i 1))))])
-    obj))
+    obj)
+
+  (define-syntax-rule (named-lambda name arglist body ...)
+    (letrec ([name (lambda arglist body ...)])
+      name)))

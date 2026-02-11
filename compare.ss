@@ -70,22 +70,22 @@
      (restrict null? eq?)))
 
   (define (make-pair<=? car<=? cdr<=?)
-    (restrict pair?
-              (lambda (x y)
-                (case (compare car<=? (car x) (car y))
-                  [(<)  #t]
-                  [(>)  #f]
-                  [(=) (cdr<=? (cdr x) (cdr y))]
-                  [(#f) (let ([dx (car<=? (car x) (car x))]
-                              [dy (car<=? (car y) (car y))])
-                          (cond
-                            [(and dx (not dy)) #t]
-                            [(and dy (not dx)) #f]
-                            [(and dx dy)       #f]
-                            [else              (cdr<=? (cdr x) (cdr y))]))]
-                  [else (check #f
-                               "What?"
-                               (compare car<=? (car x) (car y)))]))))
+    (define (pair<= x y)
+      (case (compare car<=? (car x) (car y))
+        [(<)  #t]
+        [(>)  #f]
+        [(=) (cdr<=? (cdr x) (cdr y))]
+        [(#f) (let ([dx (car<=? (car x) (car x))]
+                    [dy (car<=? (car y) (car y))])
+                (cond
+                  [(and dx (not dy)) #t]
+                  [(and dy (not dx)) #f]
+                  [(and dx dy)       #f]
+                  [else              (cdr<=? (cdr x) (cdr y))]))]
+        [else (check #f
+                     "What?"
+                     (compare car<=? (car x) (car y)))]))
+    (restrict pair? pair<=))
 
   (define (make-lex<=? elem<=?)
     (define rec (eta (make-lex<=? elem<=?)))

@@ -81,7 +81,7 @@
     (fields cont))
 
   (define-syntax-rule (Zzz body ...)
-    (make-delay (lambda () body ...)))
+    (make-delay (named-lambda delayed () body ...)))
 
   (define-record-type constraint
     (fields constructor reifier operands))

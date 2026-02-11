@@ -53,23 +53,32 @@
              (list (cons (state-subst state) constraint))
              '()))]
       [(same-check? constraint)
-       (let*-values ([(lhs rhs) (apply values (constraint-operands constraint))]
-                     [(vm1) (unify lhs rhs (state-subst state) metavar?)])
+       (let* ([lhs-rhs (constraint-operands constraint)]
+              [lhs (car lhs-rhs)]
+              [rhs (cadr lhs-rhs)]
+              [vm1 (unify lhs rhs (state-subst state) metavar?)])
          (if vm1 (list (cons vm1 constraint)) '()))]
       [else
        (filter-map
         (lambda (other)
           (and-let* ([_ (not (member other nogood))]
-                     [vm (unify-constraint constraint other (state-subst state) metavar?)])
+                     [vm (unify-constraint
+                          constraint
+                          other
+                          (state-subst state)
+                          metavar?)])
             (cons vm other)))
         (state-facts state))]))
 
-  (define-check (constrain [state state?] [cs (disjoin constraint? (listof constraint?))])
+  (define-check (constrain [state state?]
+                           [cs (disjoin constraint?
+                                        (listof constraint?))])
     (disjoin not state?)
     (let* ([cs (if (constraint? cs) (list cs) cs)]
            [cs (filter
                 (lambda (c)
-                  (null? (query-constraint state c (const #f) '())))
+                  (null?
+                   (query-constraint state c (const #f) '())))
                 cs)])
       (if (null? cs)
           state

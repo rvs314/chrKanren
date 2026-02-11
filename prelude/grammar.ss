@@ -4,8 +4,8 @@
   (export)
   (import (rnrs)
           (chrKanren base)
+          (chrKanren prelude types)
           (chrKanren utils)
-          (chrKanren prelude applyo)
           (srfi :39 parameters))
 
   (define-constraint (matches-grammaro gram obj)
@@ -40,9 +40,4 @@
       (matches-grammaro `(pairof ,l ,r) p)
       (ground (negate pair?) p)
       <=>
-      fail)
-    (forall (x y)
-      (matches-grammaro x y)
-      (ground boolean? x)
-      <=>
-      (matches-grammaro (not x) y))))
+      fail)))
