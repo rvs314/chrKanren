@@ -297,6 +297,11 @@
       (== q `(3 . (,b . ,b)))))
   '((3 _.0 . _.0)))
 
+
+;; This test checks that, for any series of constructors `f`, x ≠ (f x) ⇒ ⊤
+;; in chrKanren this isn't true, as not all constructors are injective.
+;; That said, it does happen to be true of the `cons` constructor, which this
+;; test actually checks.
 (define-test test-45b
   (test-count 0)
   (check (equal?

@@ -54,10 +54,10 @@
         [(or (atom? obj) (var? obj)) obj]
         [else (error 'walk* "I'm not sure what this is" obj)])))
 
-  (define (square-varmap vm)
-    (check (varmap? vm))
+  (define-check (square-varmap [vm varmap?]) varmap?
     (alist->varmap
-     (filter (lambda (k.v) (not (equal? (car k.v) (cdr k.v))))
+     (filter (lambda (k.v)
+               (not (equal? (car k.v) (cdr k.v))))
              (map (lambda (k) (cons k (walk* k vm)))
                   (delete-duplicates (map car (varmap->alist vm)))))))
 
@@ -103,8 +103,10 @@
   (define unify*
     (case-lambda
       [(objs vm)
+       (check (varmap? vm))
        (unify* objs vm var?)]
       [(objs vm var?)
+       (check (varmap? vm))
        (unify (map car objs) (map cdr objs) vm var?)]))
 
   (define unify

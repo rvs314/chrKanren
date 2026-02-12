@@ -22,13 +22,16 @@
     `(=/= ,@(lex-sort (map (compose lex-sort pair->tuple) alist))))
 
   (define (reducible? diseq-spec)
-    (not (equal? (reduced diseq-spec) diseq-spec)))
+    (and diseq-spec
+         (not (equal? (reduced diseq-spec) diseq-spec))))
 
   (define (reduced diseq-spec)
-    (false-map (compose varmap->alist square-varmap) (unify* diseq-spec empty-varmap)))
+    (false-map (compose varmap->alist square-varmap)
+               (unify* diseq-spec empty-varmap)))
 
   (define (subsumes? ls rs)
-    (unify* ls (alist->varmap rs) (const #f)))
+    (define rs^ (unify* rs empty-varmap))
+    (and rs^ (unify* ls rs^ (const #f))))
 
   (define (trivial-instantiation? vs l)
     (define rs (free-variables vs))
@@ -96,6 +99,7 @@
     (forall (ls vs)
       (reifying vs)
       (=/=* ls)
+      (ground (negate boolean?) ls)
       (ground reducible? ls)
       <=>
       (or (false-map =/=* (reduced ls))

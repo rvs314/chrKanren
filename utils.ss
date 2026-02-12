@@ -3,7 +3,7 @@
 (library (chrKanren utils)
   (export define-syntax-rule
           TODO
-          atom?
+          atom? any?
           eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
@@ -26,6 +26,7 @@
           singleton? single-out
           find-subtree
           false-map
+          vector-set vector-update
           vector-exists vector-fold
           snoc rdc rac rdc+rac
           proccall
@@ -257,6 +258,8 @@
              boolean? symbol? bytevector?
              procedure?))
 
+  (define (any? . _) #t)
+
   (define (fixpoint step finished? start0 . start)
     (let-values ([next (apply step start0 start)])
       (if (apply finished? start0 (append start next))
@@ -327,6 +330,14 @@
                        acc
                        (map (cut vector-ref <> i) (cons v vs)))
                 (+ 1 i)))))
+
+  (define (vector-set vec key value)
+    (define vec^ (vector-map values vec))
+    (vector-set! vec^ key value)
+    vec^)
+
+  (define (vector-update vec key fn)
+    (vector-set vec key (fn (vector-ref vec key))))
 
   (define (vector-exists pred vec)
     (let loop ([i 0])
