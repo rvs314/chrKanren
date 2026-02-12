@@ -123,7 +123,6 @@
          ((f x) (g x))))))
 (define K '(λ (x) (λ (y) x)))
 (define I '(λ (x) x))
-(define )
 
 (define S-type
   '((((-> (-> number (-> number number))
@@ -137,4 +136,4 @@
     [(singleton? xs) (car xs)]
     [else (list (car xs) (apply app (cdr xs)))]))
 
-(define (S-examples ))
+;; (define (S-examples ))
