@@ -67,6 +67,9 @@ Setting the ~SCHEME_CMD~ environment variable will change the implementation use
   SCHEME_CMD="my_cool_scheme --run-as-script" ./run_tests.sh
 #+end_src
 
+* Contract Checking
+
+The chrKanren implementation uses runtime contract checking to help with debugging; it's turned on by default, but can be disabled by setting the environment variable ~DEBUG~ to ~OFF~ when compiling/running the code. This makes the code /significantly/ faster, and should be done whenever performance tests are being run.
 
 * Constraint Handling Rules API
 
