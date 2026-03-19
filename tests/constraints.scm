@@ -12,6 +12,8 @@
         (chrKanren unify)
         (chrKanren goals))
 
+(*constraint-handling-rules* '())
+
 (define-constraint (symbolo obj)
   `(symbolo ,obj))
 
@@ -26,8 +28,14 @@
     (check (eq? fnc symbolo))))
 
 (define-rules
-  [forall (obj) (symbolo obj) (ground symbol? obj)]
-  [forall (obj) (symbolo obj) (ground (negate symbol?) obj) <=> fail])
+  (forall (obj)
+    (forget (symbolo obj))
+    (ground symbol? obj))
+  (forall (obj)
+    (forget (symbolo obj))
+    (ground (negate symbol?) obj)
+    <=>
+    fail))
 
 (define-test symbolo-test
   (check (equal? (run* (p) (symbolo p))
@@ -41,9 +49,19 @@
   `(numbero ,obj))
 
 (define-rules
-  [forall (obj) (symbolo obj) (numbero obj) <=> fail]
-  [forall (obj) (numbero obj) (ground number? obj) <=> succeed]
-  [forall (obj) (numbero obj) (ground (negate number?) obj) <=> fail])
+  (forall (obj)
+    (forget (symbolo obj))
+    (forget (numbero obj))
+    <=>
+    fail)
+  (forall (obj)
+    (forget (numbero obj))
+    (ground number? obj))
+  (forall (obj)
+    (forget (numbero obj))
+    (ground (negate number?) obj)
+    <=>
+    fail))
 
 (define-test numbero-test
   (check (equal? (run* (p) (numbero p))

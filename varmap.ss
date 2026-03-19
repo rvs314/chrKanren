@@ -16,11 +16,6 @@
   It uses a variant of the trie in faster-miniKanren's `mk-vicare.scm` implementation.
   Varmaps are just wrappers over intmaps, which map nonnegative fixnums to arbitrary values.
 
-  shift({ Kᵢ → Vᵢ }, B) = { (Kᵢ << r | B) → Vᵢ }
-
-  intmap ::= '()          -- {}
-           | (K . V)      -- { K → V }
-           | #(X₁ ... Xᵣ) -- ⋃ᵢ shift(Xᵢ, i)
 
   We use primitive types for intmaps to avoid having to unbox when not needed,
   but wrap the intmaps in varmaps for type-safety
@@ -36,7 +31,6 @@
 
   (define (join hi lo)
     (fxior (fxarithmetic-shift-left hi shift-size) lo))
-
 
   (define not-found (list 'not-found))
   (define (not-found? obj) (eq? obj not-found))
@@ -85,7 +79,8 @@
     (cond
       [(null? im) '()]
       [(pair? im) (list (cdr im))]
-      [(vector? im) (apply append (vector->list (vector-map intmap-values im)))]))
+      [(vector? im)
+       (apply append (vector->list (vector-map intmap-values im)))]))
 
   (define-record-type varmap (fields contents))
 

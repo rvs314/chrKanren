@@ -8,7 +8,7 @@
    constraint make-constraint constraint?
    constraint-constructor constraint-reifier constraint-operands
 
-   === scheme same-check? scheme-check? reifying
+   === scheme same-check? scheme-check? reifying constraint-check?
 
    conjunction conj conjunction? conjunction-left conjunction-right
    disj disjunction disjunction? disjunction-left disjunction-right
@@ -112,10 +112,15 @@
                                 (lambda arglist body ...)
                                 (dotted-list arglist))))]))
 
-  (define-constraint (=== _lhs _rhs)
-    (error '=== "This should never reify"))
-  (define-constraint (scheme _pred _obj . _objs)
-    (error 'scheme "This should never reify"))
+  (define-constraint (=== lhs rhs)
+    (error '=== "=== should never reify" lhs rhs))
+  (define-constraint (scheme pred obj . objs)
+    (apply error
+           'scheme
+           "The `scheme` constraint should never reify"
+           pred
+           obj
+           objs))
   (define-constraint (reifying _query-variables)
     #f)
 
@@ -126,6 +131,10 @@
   (define (scheme-check? con)
     (and (constraint? con)
          (eq? (constraint-constructor con) scheme)))
+
+  (define (constraint-check? con)
+    (and (constraint? con)
+         (not (memq (constraint-constructor con) (list === scheme)))))
 
   (define constraint=?
     (conjoin

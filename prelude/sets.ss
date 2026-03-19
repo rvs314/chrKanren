@@ -13,6 +13,11 @@
           (chrKanren check)
           (chrKanren utils)
           (chrKanren rule)
+          (chrKanren interp)
+          (chrKanren goals)
+          (chrKanren unify)
+          (chrKanren state)
+          (chrKanren streams)
           (chrKanren prelude lists)
           (chrKanren prelude unification)
           (chrKanren prelude types))
@@ -75,7 +80,8 @@
   (define-relation (set-nullo obj)
     (== obj '#(set)))
 
-  (define (seto obj) (typeo obj 'set set? valid-seto))
+  (define (seto obj)
+    (typeo obj 'set set? valid-seto))
 
   (define-relation (valid-seto obj)
     (conde
@@ -89,14 +95,16 @@
 
   (define-rules
     (forall (r)
-      (ino r set-nil) <=> fail)
+      (forget (ino r set-nil))
+      <=>
+      fail)
     (forall (r s t)
-      (ino r (set-cons s t))
+      (forget (ino r (set-cons s t)))
       <=>
       (seto t)
       (disj (== r s) (ino r t)))
     (forall (t X)
-      (ino t X)
+      (forget (ino t X))
       (scheme var? X)
       <=>
       (seto X)
@@ -106,36 +114,36 @@
   (define parallel-sets? (on eq? set-tail))
 
   (define-rules
-    (forall (t) (== t set-nil) <=> (=== t set-nil))
-    (forall (t) (== set-nil t) <=> (=== set-nil t))
+    (forall (t) (forget (== t set-nil)) <=> (=== t set-nil))
+    (forall (t) (forget (== set-nil t)) <=> (=== set-nil t))
     (forall (t s p)
-      (== p (set-cons t s))
+      (forget (== p (set-cons t s)))
       (ground (negate set-pair?) p)
       <=>
       fail)
     (forall (t s p)
-      (== (set-cons t s) p)
+      (forget (== (set-cons t s) p))
       (ground (negate set-pair?) p)
       <=>
       fail)
     (forall (t s t^ s^)
-      (== (set-cons t s) (set-cons t^ s^))
-      (scheme (negate eq?) (set-tail s) (set-tail s^))
+      (forget (== (set-cons t s) (set-cons t^ s^)))
+      (scheme (negate parallel-sets?) s s^)
       <=>
       (seto s)
       (seto s^)
       (conde
        [(== t t^)
-        (disj (== s s^)
-              (== (set-cons t s) s^)
+        (disj (== (set-cons t s) s^)
+              (== s s^)
               (== s (set-cons t^ s^)))]
        [(fresh (N)
           (seto N)
           (== s (set-cons t^ N))
           (== s^ (set-cons t N)))]))
     (forall (t s t^ s^)
-      (== (set-cons t s) (set-cons t^ s^))
-      (scheme eq? (set-tail s) (set-tail s^))
+      (forget (== (set-cons t s) (set-cons t^ s^)))
+      (scheme parallel-sets? s s^)
       <=>
       (parallel-sets-== (cons t (set-head s))
                         (cons t^ (set-head s^))
@@ -174,15 +182,15 @@
 
   (define-rules
     (forall (x rs z)
-      (occurs-checko x (cons set-nil rs) z)
+      (forget (occurs-checko x (cons set-nil rs) z))
       <=>
       (occurs-checko x rs z))
     (forall (x t rs z)
-      (occurs-checko x (cons (set-cons x t) rs) z)
+      (forget (occurs-checko x (cons (set-cons x t) rs) z))
       <=>
       fail)
     (forall (x rs z)
-      (occurs-checko x rs z)
+      (forget (occurs-checko x rs z))
       (ground set-pair? z)
       (scheme (lambda (x z) (eq? x (set-tail z))) x z)
       <=>
@@ -190,14 +198,14 @@
         (seto N)
         (occurs-checko x (set-head z) (make-set (set-head z) N))))
     (forall (x h t rs z)
-      (occurs-checko x (cons (set-cons h t) rs) z)
+      (forget (occurs-checko x (cons (set-cons h t) rs) z))
       (scheme (negate set-pair?) z)
       (scheme (negate eq?) x h)
       (scheme (negate eq?) x t)
       <=>
       (occurs-checko x (cons* h t rs) z))
     (forall (x h t rs z)
-      (occurs-checko x (cons (set-cons h t) rs) z)
+      (forget (occurs-checko x (cons (set-cons h t) rs) z))
       (ground set-pair? z)
       (scheme (lambda (x z) ((negate eq?) x (set-tail z))) x z)
       (scheme (negate eq?) x h)

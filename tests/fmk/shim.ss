@@ -1,17 +1,58 @@
 #!r6rs
 
 (library (chrKanren tests fmk shim)
-  (export test
+  (export test test-subsumes
           defrel
           (rename (run-shim run)
                   (run*-shim run*)))
   (import (rnrs)
           (srfi :2 and-let*)
+          (srfi :26 cut)
+          (only (srfi :1 lists) lset-difference)
           (chrKanren utils)
           (chrKanren base)
           (chrKanren compare)
+          (chrKanren interp)
+          (chrKanren state)
           (chrKanren check)
-          (chrKanren test))
+          (chrKanren streams)
+          (chrKanren reifier)
+          (chrKanren test)
+          (chrKanren goals))
+
+  (define (answer-subsumes? nm vars strm results counter)
+    (or (null? results)
+        (and (= counter (*finite-maturation-limit*))
+             (error nm "Stream is infinite"))
+        (let ([ms (mature strm)])
+          (and (solution? ms)
+               (answer-subsumes?
+                nm
+                vars
+                (solution-rest ms)
+                (remove
+                 (shim-result
+                  (reify-query vars (solution-first ms)))
+                 results)
+                (+ 1 counter))))))
+
+  (define-syntax test-subsumes
+    (syntax-rules (run-shim)
+      [(test-subsumes nm
+                      (run-shim _ (x ...) body ...)
+                      result)
+       (define-test nm
+         (fresh (x ...)
+           (check (answer-subsumes?
+                   'nm
+                   (list x ...)
+                   (start empty-state
+                          (conj
+                           body ...
+                           (reifying (list x ...))))
+                   result
+                   0)
+                  'nm)))]))
 
   (define-syntax test
     (lambda (stx)
@@ -31,7 +72,7 @@
     (define-relation arg ...))
 
   (define (constraint-sort cs)
-    (define (disc obj) (eqv<=? (lambda (o) (eq? o obj))))
+    (define (disc obj) (eqv<=? (cut eq? obj <>)))
     (define constraint<=?
       (prioritize (disc '=/=)
                   (disc 'num)
@@ -48,11 +89,12 @@
                [(char=? (string-ref nm 1) #\.)])
       #t))
 
-  (define (shim res)
-    (define shim<=? (make-lex<=?
-                     (prioritize
-                      (restrict reified-var? (on string<=? symbol->string))
-                      atom<=?)))
+  (define (shim-result res)
+    (define shim<=?
+      (make-lex<=?
+       (prioritize
+        (restrict reified-var? (on string<=? symbol->string))
+        atom<=?)))
     (define (sort-shim ac) (sort shim<=? ac))
     (define (shim-constraint con)
       (define kind (car con))
@@ -61,18 +103,18 @@
             (lex-sort
              (case kind
                ((sym str num) (map car instances))
-               ((=/=) (map (compose lex-sort (lambda (x) (map sort-shim x)))
+               ((=/=) (map (compose lex-sort
+                                    (cut map sort-shim <>))
                            instances))
                (else instances)))))
 
-    (define (shim-result res)
-      (define term (single-out (car res)))
-      (define constraints
-        (constraint-sort
-         (map shim-constraint (group-by car+cdr (cdr res)))))
-      (single-out (cons term constraints)))
+    (define term (single-out (car res)))
+    (define constraints
+      (constraint-sort
+       (map shim-constraint (group-by car+cdr (cdr res)))))
+    (single-out (cons term constraints)))
 
-    (map shim-result res))
+  (define (shim xs) (map shim-result xs))
 
   (define-syntax-rule (run-shim arg ...)
     (shim (run-finite arg ...)))

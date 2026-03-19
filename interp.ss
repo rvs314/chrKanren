@@ -1,48 +1,213 @@
 #!r6rs
 
 (library (chrKanren interp)
-  (export *maturation-limit* mature age take+drop take drop step start)
+  (export *maturation-limit* mature age
+          unify-constraint apply-rule constrain
+          take+drop take drop
+          step start
+          make-seen-before?
+          propagate-constraints apply-rule query-constraint)
 
   (import (rnrs)
           (chrKanren check)
           (chrKanren rule)
           (chrKanren utils)
           (chrKanren vars)
+          (chrKanren varmap)
           (chrKanren goals)
           (chrKanren streams)
           (chrKanren relation)
           (chrKanren state)
+          (chrKanren unify)
+          (chrKanren goals)
+          (only (srfi :1 lists) filter-map)
           (srfi :2 and-let*)
-          (srfi :39 parameters))
+          (srfi :26 cut)
+          (srfi :39 parameters)
+          (except (prefix (srfi :41 streams) s:)
+                  s:list->stream s:stream->list))
+
+  ;; Because racket defines R6RS "lists" as their mutable-lists,
+  ;; any code they write that uses list primitives needs to be copied.
+  (define (s:list->stream objs)
+    (define list->stream
+      (s:stream-lambda
+       (objs)
+       (if (null? objs)
+           s:stream-null
+           (s:stream-cons (car objs) (list->stream (cdr objs))))))
+    (if (not (list? objs))
+        (error 'list->stream "non-list argument")
+        (list->stream objs)))
+
+  (define (s:stream->list strm)
+    (if (s:stream-pair? strm)
+        (cons (s:stream-car strm)
+              (s:stream->list (s:stream-cdr strm)))
+        '()))
+
+  (define-check (unify-constraint [lcon rcon constraint?]
+                                  [subst varmap?]
+                                  [var? procedure?])
+    (disjoin not varmap?)
+    (and (eq? (constraint-constructor lcon)
+              (constraint-constructor rcon))
+         (unify (constraint-operands lcon)
+                (constraint-operands rcon)
+                subst
+                var?)))
+
+  #|
+  Given a state and a constraint, return a stream of
+  potential (subst/witness pairs)
+  |#
+  (define-check (query-constraint [state state?]
+                                  [constraint constraint?]
+                                  [metavar? procedure?])
+    s:stream?
+    (cond
+      [(scheme-check? constraint)
+       (let-values ([(pred . objs)
+                     (apply values (constraint-operands constraint))])
+         (if (apply (walk pred (state-subst state))
+                    (walk* objs (state-subst state)))
+             (s:stream (cons (state-subst state) #f))
+             (s:stream)))]
+      [(same-check? constraint)
+       (let*-values ([(lhs rhs)
+                      (apply values (constraint-operands constraint))]
+                     [(vm1)
+                      (unify lhs rhs (state-subst state) metavar?)])
+         (if vm1
+             (s:stream (cons vm1 #f))
+             (s:stream)))]
+      [else
+       (s:stream-of
+        (cons vm fact)
+        (fact in (s:list->stream (state-facts state)))
+        (vm is (unify-constraint constraint
+                                 fact
+                                 (state-subst state)
+                                 metavar?))
+        (values vm))]))
+
+  (define-check (constrain [state state?]
+                           [cs constraint?])
+    (disjoin not state?)
+    (let*-values ([(cs) (list cs)]
+                  [(same-checks constraints)
+                   (partition same-check? cs)]
+                  [(facts)
+                   (append (state-facts state) constraints)]
+                  [(hist) (state-hist state)]
+                  [(subst)
+                   (unify*
+                    (map
+                     (compose tuple->pair constraint-operands)
+                     same-checks)
+                    (state-subst state))]
+                  [(state1)
+                   (and subst
+                        (make-state subst facts hist))])
+      state1))
+
+  (define-check (make-seen-before? [rule rule?] [state state?])
+    procedure?
+    (define-check (seen-before? [witnesses (listof constraint?)])
+      (disjoin not history-entry?)
+      (define new-fact (cons rule witnesses))
+      (find (lambda (old-fact)
+              (and (= (length new-fact) (length old-fact))
+                   (for-all eq? new-fact old-fact)))
+            (state-hist state)))
+    seen-before?)
+
+  (define-check (apply-rule [rule rule?] [state state?])
+    (disjoin not propagating?)
+    (define rule-variable? (cut rule-free? rule <>))
+    ;; Solves a list of prerequisites for a given substitution
+    ;; Returns a stream of possible solutions, which are
+    ;; pairs of substitutions and witness lists
+    ;; (: solve-prereqs ((listof witness?) varmap?
+    ;;                   -> (streamof (pairof varmap?
+    ;;                                        (listof witness?)))))
+    (define-check (solve-prereqs [prereqs (listof witness?)]
+                                 [subst varmap?])
+      s:stream?
+      (disjoin (arguments not not)
+               (arguments varmap? (listof witness?)))
+      (if (null? prereqs)
+          (s:stream (cons subst '()))
+          (s:stream-of (cons subst^^
+                             (if witness^
+                                 (cons witness^ witnesses)
+                                 witnesses))
+                       (prereq is (car prereqs))
+                       (prereq-constraint is (witness->constraint
+                                              prereq))
+                       (matches is (query-constraint
+                                    (state-with-subst subst state)
+                                    prereq-constraint
+                                    rule-variable?))
+                       (match in matches)
+                       (subst^ is (car match))
+                       (constraint^ is (cdr match))
+                       (witness^ is
+                                 (and constraint^
+                                      (make-witness
+                                       (witness-kept? prereq)
+                                       (post constraint^))))
+                       (solution in (solve-prereqs (cdr prereqs)
+                                                   subst^))
+                       (subst^^ is (car solution))
+                       (witnesses is (cdr solution)))))
+    (define witness->constraint
+      (compose posting-constraint witness-constraint))
+    (and-let* ([solutions
+                (s:stream-filter
+                 (compose
+                  (conjoin all-distinct?
+                           (negate (make-seen-before? rule state)))
+                  (cut map witness->constraint <>)
+                  cdr)
+                 (solve-prereqs (rule-prereqs rule)
+                                (state-subst state)))]
+               [_ (s:stream-pair? solutions)]
+               [sol (s:stream-car solutions)]
+               [subst (car sol)]
+               [witnesses (cdr sol)])
+      (make-propagating
+       (make-bind
+        (make-singleton
+         (state-record-application state rule witnesses))
+        (let* ([args  (walk* (rule-free-variables rule) subst)]
+               [args0 (copy-term args rule-variable?)])
+          (apply (rule-consequences rule) args0))))))
 
   (define-check (propagate-constraints [state state?])
-    stream?
-    (or (exists
-         (lambda (rule)
-           (check (rule? rule))
-           (and-let* ([goal.witnesses (apply-rule state rule)]
-                      [goal (car goal.witnesses)]
-                      [witnesses (cdr goal.witnesses)])
-             (make-propagating
-              (start (retract state witnesses) goal))))
-         (*constraint-handling-rules*))
+    (disjoin propagating? solution?)
+    (or (exists (lambda (rule) (apply-rule rule state))
+                (*constraint-handling-rules*))
         (make-solution state empty-stream)))
 
   (define *maturation-limit* (make-parameter +inf.0))
 
-  (define (mature strm)
-    (check (stream? strm) "Cannot mature a non-stream")
+  (define-check (mature [strm stream?])
+    stream?
     (let loop ([strm strm] [count (*maturation-limit*)])
       (cond
         [(mature? strm) strm]
         [(zero? count) (error 'mature "Stream is infinite" strm)]
         [else (loop (step strm) (- count 1))])))
 
-  (define (age strm)
-    (if (mature? strm) strm (step strm)))
+  (define-check (age [strm stream?])
+    stream?
+    (if (mature? strm)
+        strm
+        (step strm)))
 
-  ;; State -> Goal -> Stream
-  (define (start st gl)
+  (define-check (start [st state?] [gl goal?])
+    stream?
     (cond
       [(failure? gl)     empty-stream]
       [(success? gl)     (make-solution st empty-stream)]
@@ -66,9 +231,8 @@
       [else
        (check #f "Not sure how to start goal" st gl)]))
 
-  ;; Stream -> Stream
-  (define (step strm)
-    (check (stream? strm))
+  (define-check (step [strm stream?])
+    stream?
     (cond
       [(choice? strm)
        (let ([s1 (age (choice-left strm))]
@@ -83,11 +247,9 @@
        (let ([s (age (propagating-stream strm))])
          (cond
            [(empty? s) s]
-           [(and (solution? s) (empty? (solution-rest s)))
-            (propagate-constraints (solution-first s))]
            [(solution? s)
-            (make-choice (propagate-constraints (solution-first s))
-                         (make-propagating (solution-rest s)))]
+            (step (make-choice (propagate-constraints (solution-first s))
+                               (make-propagating (solution-rest s))))]
            [else (make-propagating s)]))]
       [(bind? strm)
        (let ([s (age (bind-stream strm))]

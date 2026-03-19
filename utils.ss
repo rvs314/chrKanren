@@ -19,6 +19,7 @@
           add1 sub1
           fixpoint
           begin0
+          all-distinct?
           treeof pairof listof arguments
           tuple->pair pair->tuple
           symbol
@@ -58,9 +59,12 @@
 
   (define negate (cut compose not <>))
 
-  (define (const . xs)
-    (lambda _
-      (apply values xs)))
+  (define const
+    (case-lambda
+      [(x) (lambda _ x)]
+      [xs  (lambda _ (apply values xs))]))
+
+  (define any? (const #t))
 
   (define (compose . fs)
     (define (compose₂ f1 f2)
@@ -81,7 +85,8 @@
             (begin body ...)]))]))
 
   (define-syntax-rule (eta proc)
-    (cut proc <...>))
+    (lambda arglist
+      (apply proc arglist)))
 
   (define-syntax TODO
     (identifier-syntax
@@ -238,7 +243,8 @@
 
   (define (listof elem?)
     (lambda (x)
-      (and (list? x) (for-all elem? x))))
+      (and (list? x)
+           (for-all elem? x))))
 
   (define (arguments . tests)
     (lambda args
@@ -258,7 +264,6 @@
              boolean? symbol? bytevector?
              procedure?))
 
-  (define (any? . _) #t)
 
   (define (fixpoint step finished? start0 . start)
     (let-values ([next (apply step start0 start)])
@@ -392,4 +397,10 @@
 
   (define-syntax-rule (named-lambda name arglist body ...)
     (letrec ([name (lambda arglist body ...)])
-      name)))
+      name))
+
+  (define (all-distinct? objs)
+    (or (null? objs)
+        (and (pair? objs)
+             (not (memv (car objs) (cdr objs)))
+             (all-distinct? (cdr objs))))))

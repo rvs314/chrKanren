@@ -59,10 +59,9 @@
               (relationo q)))
           '(((_.0)))))
   (check (equal?
-          (run* ()
-            (fresh (q)
-              (symbolo q)
-              (relationo q)))
+          (run* (q)
+            (symbolo q)
+            (relationo q))
           '()))
   (check (equal?
           (run* (p)

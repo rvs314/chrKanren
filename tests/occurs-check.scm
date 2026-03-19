@@ -30,11 +30,11 @@ Boxes are just single slots which do not follow the occurs-check.
 
 (define-rules
   (forall (x y)
-    (== (box x) (box y))
+    (forget (== (box x) (box y)))
     <=>
     (== x y))
   (forall (x y)
-    (== (box x) y)
+    (forget (== (box x) y))
     (ground (negate box?) y)
     <=>
     fail)
@@ -46,7 +46,7 @@ Boxes are just single slots which do not follow the occurs-check.
 
   ;; Ignore all occurs-check tests
   (forall (x y rs z)
-    (occurs-checko x (cons (box y) rs) z)
+    (forget (occurs-checko x (cons (box y) rs) z))
     <=>
     (occurs-checko x rs z)))
 

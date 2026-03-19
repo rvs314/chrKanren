@@ -1,7 +1,10 @@
 #!r6rs
 
 (library (chrKanren reifier)
-  (export reify-query)
+  (export reify-query reify-constraint
+          *variable-namer*
+          make-helpful-variable-namer
+          make-simple-variable-namer)
   (import (rnrs)
           (rnrs mutable-pairs)
           (srfi :39 parameters)
@@ -47,6 +50,19 @@
          (begin0 (symbol "_." name-counter)
            (set! name-counter (+ 1 name-counter)))))))
 
+  (define (make-variable-namer var->name)
+     (lambda ()
+       (define name-counter 0)
+       (lambda (vr)
+         (begin0 (symbol "_" (var->name vr) "." name-counter)
+           (set! name-counter (+ 1 name-counter))))))
+
+  (define (make-simple-variable-namer)
+    (make-variable-namer (const "")))
+
+  (define (make-helpful-variable-namer)
+    (make-variable-namer var-name))
+
   (define object? (disjoin pair? vector?))
 
   (define (make-reifier vm)
@@ -63,7 +79,9 @@
            (when (< i (vector-length obj))
              (vector-set! obj i (reify! (vector-ref obj i)))
              (loop (+ i 1))))]
-        [else (error 'reify-object! "Object must be either a pair or a vector")]))
+        [else
+         (error 'reify-object!
+                "Object must be either a pair or a vector")]))
     (define (reify! obj)
       (if (hashtable-contains? seen-objects obj)
           (hashtable-ref seen-objects obj 'ERROR)
@@ -94,11 +112,11 @@
             [else obj])))
     reify!)
 
+  (define (reify-constraint con)
+    (apply (constraint-reifier con) (constraint-operands con)))
+
   (define (reify-query qry st)
     (define reify! (make-reifier (varmap-copy (state-subst st))))
-
-    (define (reify-constraint con)
-      (apply (constraint-reifier con) (constraint-operands con)))
 
     (reify! (copy-object
              (cons qry

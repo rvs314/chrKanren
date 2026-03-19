@@ -18,10 +18,12 @@
   (define-constraint (absento needle haystack)
     `(absento ,needle ,haystack))
 
-  (define (trivial-instantiation? vs l)
-    (define rs (free-variables vs))
-    (find-subtree (lambda (obj) (and (var? obj) (not (memq obj rs))))
-                  l))
+  ;; True iff there is a variable in `term`
+  ;; which is not a member of `relevant-variables`
+  (define (any-irrelevant? relevant-variables term)
+    (define relevant (free-variables relevant-variables))
+    (define (relevant? v) (memq v relevant))
+    (find (negate relevant?) (free-variables term)))
 
   (define-rules
     (forall (x)
@@ -30,77 +32,46 @@
       fail)
     (forall (x y)
       (absento x y)
-      (ground (negate pair?) y)
+      (forget (absento x y)))
+    (forall (x y)
+      (forget (absento x y))
+      (ground atom? y)
       <=>
       (=/= x y))
-    (forall (x y)
-      (absento x y)
-      (absento x y)
+    (forall (x y n p)
+      (forget (absento x y))
+      (typeo y n p #f)
       <=>
-      (absento x y))
-    (forall (x y n p pr^)
-      (absento x y)
-      (typeo y n p pr^)
-      <=>
-      (typeo y n p pr^)
       (=/= x y))
     (forall (x y z)
-      (absento x (cons y z))
+      (forget (absento x (cons y z)))
       <=>
       (=/= x (cons y z))
       (absento x y)
       (absento x z))
     (forall (x y vs)
       (reifying vs)
-      (absento x y)
-      (scheme
-       trivial-instantiation?
-       vs
-       y)
-      <=>
-      (reifying vs))
+      (forget (absento x y))
+      (ground list? vs)
+      (scheme (lambda (vs x y)
+                (any-irrelevant? vs (cons x y)))
+              vs
+              x
+              y))
     (forall (x y vs)
       (reifying vs)
-      (absento x y)
-      (scheme
-       trivial-instantiation?
-       vs
-       x)
-      <=>
-      (reifying vs))
-    (forall (x y vs)
-      (reifying vs)
-      (absento x y)
-      (scheme (lambda (y x) (subterm? y x empty-varmap)) y x)
-      <=>
-      (reifying vs))
-    (forall (x y vs)
-      (reifying vs)
-      (absento x y)
-      (=/=* (list (cons x y)))
-      <=>
-      (reifying vs)
-      (absento x y))
-    (forall (x y vs)
-      (reifying vs)
-      (absento x y)
-      (=/=* (list (cons y x)))
-      <=>
-      (reifying vs)
-      (absento x y))
+      (forget (absento x y))
+      (scheme (lambda (y x)
+                (subterm? y x empty-varmap))
+              y
+              x))
     (forall (x y z vs)
       (reifying vs)
       (absento x y)
-      (absento z y)
-      (ground (lambda (x y) (subterm? x y empty-varmap)) x z)
-      <=>
-      (reifying vs)
-      (absento x y))
+      (forget (absento z y))
+      (ground (lambda (x z) (subterm? x z empty-varmap)) x z))
     (forall (x y ls vs)
       (reifying vs)
       (absento x y)
-      (=/=* ls)
-      (ground subsumes? (list (cons x y)) ls)
-      <=>
-      (reifying vs)
-      (absento x y))))
+      (forget (=/=* ls))
+      (ground subsumes? (list (cons x y)) ls))))

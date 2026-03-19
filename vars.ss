@@ -38,10 +38,12 @@
          (*var-counter* (+ 1 (*var-counter*)))
          (new name (- (*var-counter*) 1))))))
 
+  ;; TODO: rename this to `variables`
   (define (free-variables obj)
     (cond
       [(var? obj) (list obj)]
-      [(pair? obj) (append (free-variables (car obj)) (free-variables (cdr obj)))]
+      [(pair? obj) (append (free-variables (car obj))
+                           (free-variables (cdr obj)))]
       [(vector? obj) (free-variables (vector->list obj))]
       [else '()]))
 

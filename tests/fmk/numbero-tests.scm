@@ -1,6 +1,8 @@
 #!r6rs
 
-(import (rnrs) (except (chrKanren base) run run*) (chrKanren tests fmk shim))
+(import (rnrs)
+        (except (chrKanren base) run run*)
+        (chrKanren tests fmk shim))
 
 (test "numbero-1"
   (run* (q) (numbero q))

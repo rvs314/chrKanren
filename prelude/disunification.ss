@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren prelude disunification)
-  (export =/= =/=* subsumes?)
+  (export =/= =/=* subsumes? reduced)
   (import (rnrs)
           (only (srfi :1 lists) filter-map lset<= lset=)
           (chrKanren syntax)
@@ -33,93 +33,93 @@
     (define rs^ (unify* rs empty-varmap))
     (and rs^ (unify* ls rs^ (const #f))))
 
+  ;; This is copied verbatim from "absento.ss"
   (define (trivial-instantiation? vs l)
     (define rs (free-variables vs))
-    (find-subtree (lambda (obj) (and (var? obj) (not (memq obj rs))))
+    (find-subtree (lambda (obj)
+                    (and (var? obj)
+                         (not (memq obj rs))))
                   l))
 
   ;; (=/= ((A . B) (C . D) (E . F)))
   ;; Means either, A ≠ B or C ≠ D or E ≠ F
 
   (define-rules
-    (forall (x y) (=/= x y) <=> (=/=* (list (cons x y))))
-    (forall () (=/=* (list)) <=> fail)
-    (forall (l ls) (=/=* (cons (cons l l) ls)) <=> (=/=* ls))
-    (forall (l r rs)
-      (=/=* (cons (cons l r) rs))
-      (ground procedure? l)
-      (ground procedure? r)
-      (ground (negate eq?) l r)
+    (forall (x y)
+      (forget (=/= x y))
       <=>
-      succeed)
+      (=/=* (list (cons x y))))
+    (forall ()
+      (=/=* (list))
+      <=>
+      fail)
+    (forall (l ls)
+      (forget (=/=* (cons (cons l l) ls)))
+      <=>
+      (=/=* ls))
     (forall (l r rs)
-      (=/=* (cons (cons l r) rs))
+      (forget (=/=* (cons (cons l r) rs)))
       (ground atom? l)
       (ground (negate equal?) l r)
       <=>
       succeed)
     (forall (l r rs)
-      (=/=* (cons (cons l r) rs))
+      (forget (=/=* (cons (cons l r) rs)))
       (ground atom? r)
       (ground (negate equal?) l r)
       <=>
       succeed)
     (forall (l r rst n p pr)
       (typeo l n p pr)
-      (=/=* (cons (cons l r) rst))
+      (forget (=/=* (cons (cons l r) rst)))
       (ground (lambda (p r) (not (p r))) p r)
       <=>
-      (typeo l n p pr))
+      succeed)
     (forall (l r rst n p pr)
       (typeo r n p pr)
-      (=/=* (cons (cons l r) rst))
+      (forget (=/=* (cons (cons l r) rst)))
       (ground (lambda (p l) (not (p l))) p l)
       <=>
-      (typeo r n p pr))
+      succeed)
     (forall (l r n n^ p p^ rs pr pr^)
-      (=/=* (cons (cons l r) rs))
+      (forget (=/=* (cons (cons l r) rs)))
       (typeo l n p pr)
       (typeo r n^ p^ pr^)
       (ground (negate eq?) n n^)
       <=>
-      (typeo l n p pr)
-      (typeo r n^ p^ pr^))
+      succeed)
     (forall (ll lr rl rr rs)
-      (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs))
+      (forget (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs)))
       <=>
       (=/=* (cons* (cons ll rl) (cons lr rr) rs)))
     (forall (ls rs vs)
       (reifying vs)
       (=/=* ls)
-      (=/=* rs)
+      (forget (=/=* rs))
       (ground subsumes? ls rs)
       <=>
-      (reifying vs)
-      (=/=* ls))
+      succeed)
     (forall (ls vs)
       (reifying vs)
-      (=/=* ls)
-      (ground (negate boolean?) ls)
+      (forget (=/=* ls))
       (ground reducible? ls)
       <=>
       (or (false-map =/=* (reduced ls))
-          succeed)
-      (reifying vs))
+          succeed))
     (forall (ls vs)
       (reifying vs)
-      (=/=* ls)
+      (forget (=/=* ls))
+      (ground (negate reducible?) ls)
       (ground
        (lambda (vs ls)
          (exists
           (lambda (l) (trivial-instantiation? vs l))
           ls))
        vs
-       ls)
-      <=>
-      (reifying vs))
+       ls))
     (forall (ls o n p pr vs)
       (reifying vs)
-      (=/=* ls)
+      (forget (=/=* ls))
       (typeo o n p pr)
       (scheme (lambda (o ls p)
                 (exists
@@ -130,7 +130,4 @@
                  ls))
               o
               ls
-              p)
-      <=>
-      (reifying vs)
-      (typeo o n p pr))))
+              p))))

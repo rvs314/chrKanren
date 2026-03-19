@@ -10,6 +10,7 @@
         (chrKanren streams)
         (chrKanren interp)
         (chrKanren unify)
+        (chrKanren rule)
         (only (srfi :1 lists) lset=))
 
 (define-relation (animalo obj)

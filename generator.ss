@@ -193,4 +193,6 @@
               vs)]))
 
   (define (state-generator . xs)
-    (make-state (apply varmap-generator xs) '())))
+    (make-state (apply varmap-generator xs)
+                '()
+                '())))

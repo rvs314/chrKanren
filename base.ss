@@ -5,7 +5,7 @@
           define-rules <=> forall ground
           fresh === == conj disj
           conde succeed fail
-          run run*
+          run run* forget keep
           reifying
           =/= symbolo numbero stringo absento)
   (import (rnrs)

@@ -8,6 +8,7 @@
           make-bind     bind     bind?     bind-stream bind-goal
           empty-stream  empty    empty?
           make-propagating propagating propagating? propagating-stream
+          make-singleton singleton-solution?
           mature?)
 
   (import (rnrs) (chrKanren check) (chrKanren utils))
@@ -19,10 +20,11 @@
     (fields first rest)
     (protocol
      (lambda (new)
-       (lambda (first rest)
-         (check (stream? rest) "Solution-rest is a stream")
-         (check (not (stream? first)) "Solution is not a stream" first)
-         ((new) first rest)))))
+       (define-check (make-solution [first (negate stream?)]
+                                    [rest stream?])
+         solution?
+         ((new) first rest))
+       make-solution)))
 
   (define-record-type choice
     (parent stream)
@@ -66,6 +68,19 @@
 
   (define-record-type propagating
     (parent stream)
-    (fields stream))
+    (fields stream)
+    (protocol
+     (lambda (new)
+       (lambda (strm)
+         (check (stream? strm))
+         (if (empty? strm)
+             strm
+             ((new) strm))))))
+
+  (define (make-singleton state)
+    (make-solution state empty-stream))
+
+  (define singleton-solution?
+    (conjoin solution? (compose empty? solution-rest)))
 
   (define mature? (disjoin empty? solution?)))

@@ -1,13 +1,15 @@
 #!r6rs
 
+
 (library (chrKanren unify)
-  (export walk canonical-var walk* unify unify* square-varmap subterm?)
+  (export walk canonical-var walk* unify unify* square-varmap subterm? copy-term)
   (import (rnrs)
           (except (srfi :1 lists) for-each assoc map fold-right member find filter partition remove car+cdr)
           (chrKanren utils)
           (chrKanren check)
           (chrKanren varmap)
-          (chrKanren vars))
+          (chrKanren vars)
+          (srfi :26 cut))
 
   (define-syntax-rule (define-walk (name obj vm metavar?)
                         body ...)
@@ -61,19 +63,32 @@
              (map (lambda (k) (cons k (walk* k vm)))
                   (delete-duplicates (map car (varmap->alist vm)))))))
 
+  (define-check (copy-term [term any?] [metavar? procedure?]) any?
+    (define/memoized (new-var var)
+      (using (make-eq-hashtable))
+      (make-var (var-name var)))
+    (let loop ([term term])
+      (cond
+        [(atom? term) term]
+        [(pair? term) (cons (loop (car term)) (loop (cdr term)))]
+        [(vector? term) (vector-map loop term)]
+        [(and (var? term) (metavar? term)) (new-var term)]
+        [(var? term) term]
+        [else (assertion-violation 'copy-term "Don't know what this is" term)])))
+
+
   (define (subterm? needle haystack vm)
-    (or (eq? needle haystack)
-        (and (pair? haystack)
-             (or (subterm? needle (car haystack) vm)
-                 (subterm? needle (cdr haystack) vm)))
-        (and (vector? haystack)
-             (vector-exists
-              (lambda (el) (subterm? needle el vm))
-              haystack))
-        (and (var? haystack)
-             (let ([v0 (walk haystack vm)])
-               (and (not (eq? haystack v0))
-                    (subterm? needle v0 vm))))))
+    (let subterm? ([needle (walk* needle vm)]
+                   [haystack (walk* haystack vm)])
+      (or (eq? needle haystack)
+          (and (pair? haystack)
+               (or (subterm? needle (car haystack))
+                   (subterm? needle (cdr haystack))))
+          (and (vector? haystack)
+               (vector-exists
+                (lambda (el) (subterm? needle el))
+                haystack))
+          (equal? needle haystack))))
 
   ;; This version of subterm is particularly anxious,
   ;; and therefore keeps a table of what it's seen so far.

@@ -432,10 +432,10 @@ faster-miniKanren.
        ((== a x) (== out res))
        ((== `(,a . ,res) out)))))))
 
-;; This order reverses compare to fmk
 (test "=/=-51"
   (run* (q) (rembero1 'a '(a b a c) q))
-  '((a b a c) (b a c) (a b c) (b c)))
+  (reverse ; This order reverses compared to fmk
+   '((a b a c) (b a c) (a b c) (b c))))
 
 (test "=/=-52"
   (run* (q) (rembero1 'a '(a b c) '(a b c)))

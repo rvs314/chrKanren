@@ -1,13 +1,17 @@
 #!r6rs
 
 (library (chrKanren state)
-  (export empty-state state state?
-          constrain make-state
-          apply-rule retract
-          state=? state-facts state-subst)
+  (export history-entry?
+          empty-state state state?
+          make-state
+          state=? state-facts state-subst state-hist
+          state-map-subst state-map-facts state-map-hist
+          state-with-subst state-with-facts state-with-hist
+          state-seen-application? state-record-application)
   (import (rnrs)
-          (only (srfi :1 lists) filter-map)
+          (only (srfi :1 lists) filter-map lset-difference)
           (srfi :2 and-let*)
+          (srfi :26 cut)
           (rnrs mutable-pairs)
           (chrKanren utils)
           (chrKanren check)
@@ -18,140 +22,92 @@
           (chrKanren vars)
           (chrKanren varmap))
 
+  (define history-entry?
+    (conjoin pair?
+             (compose rule? car)
+             (compose (listof constraint?) cdr)))
+
   (define-record-type state
-    (fields subst facts)
+    (fields subst facts hist)
     (protocol
      (lambda (new)
-       (define-check (make-state [subst varmap?] [facts list?])
+       (define-check
+         (make-state [subst varmap?]
+                     [facts (listof constraint?)]
+                     [hist  (listof history-entry?)])
+
          state?
-         (new subst facts))
+         (new subst facts hist))
        make-state)))
 
+  ;; Helper for functional updates of state object.
+  ;; At some point in the future, we should write a library
+  ;; that generates this code automatically using static reflection
+  ;; - Raffi
+
+  (define (state-map proc state)
+    (call-with-values
+     (lambda ()
+       (proc (state-subst state)
+             (state-facts state)
+             (state-hist state)))
+     (case-lambda
+       [(subst^ facts^ hist^) (make-state subst^ facts^ hist^)]
+       [(obj) (if (state? obj) obj state)]
+       [_ state])))
+
+  (define (state-map-subst proc state)
+    (state-map (lambda (s f h) (values (proc s) f h)) state))
+
+  (define (state-map-facts proc state)
+    (state-map (lambda (s f h) (values s (proc f) h)) state))
+
+  (define (state-map-hist proc state)
+    (state-map (lambda (s f h) (values s f (proc h))) state))
+
+  (define (state-map->state-with state-map-obj)
+    (lambda (obj state)
+      (state-map-obj (const obj) state)))
+
+  (define state-with-subst (state-map->state-with state-map-subst))
+  (define state-with-facts (state-map->state-with state-map-facts))
+  (define state-with-hist  (state-map->state-with state-map-hist))
+
+  (define (same-history-entry? o1 o2)
+    (and (= (length o1) (length o2))
+         (for-all eq? o1 o2)))
+
+  (define-check (state-seen-application? [state state?]
+                                         [rule rule?]
+                                         [constraints (listof constraint?)])
+    any?
+    (and (pair? constraints)
+         (find (cut same-history-entry? <> (cons rule constraints))
+               (state-hist state))))
+
+  (define (state-record-application state rule witnesses)
+    (define (constraint-to-be-removed witness)
+      (and (witness-removed? witness)
+           (posting-constraint (witness-constraint witness))))
+    (define constraints (map (compose posting-constraint
+                                      witness-constraint)
+                             witnesses))
+    (define constraints-to-be-removed
+      (filter-map constraint-to-be-removed witnesses))
+    (state-map
+     (lambda (subst facts hist)
+       (define facts^
+         (lset-difference eq? facts constraints-to-be-removed))
+       (define hist^
+         (cons (cons rule constraints) hist))
+       (values subst facts^ hist^))
+     state))
+
   (define empty-state
-    (make-state empty-varmap '()))
+    (make-state empty-varmap '() '()))
 
   (define state=?
     (conjoin (on and-proc state?)
              (on equal? state-subst)
-             (on equal? state-facts)))
-
-  ;; For a given state and a constraint with metalogical variables satisfying
-  ;; a given predicate which are not in the nogood list,
-  ;; return: the set of "ground" varmaps which satisfy the constraint
-  ;;         their witnesses in the database.
-  (define-check (query-constraint [state state?]
-                                  [constraint constraint?]
-                                  [metavar? procedure?]
-                                  [nogood (listof constraint?)])
-    (listof (pairof varmap? constraint?))
-    (cond
-      [(scheme-check? constraint)
-       (let-values ([(pred . objs)
-                     (apply values (constraint-operands constraint))])
-         (if (apply (walk* pred (state-subst state))
-                    (walk* objs (state-subst state)))
-             (list (cons (state-subst state) constraint))
-             '()))]
-      [(same-check? constraint)
-       (let* ([lhs-rhs (constraint-operands constraint)]
-              [lhs (car lhs-rhs)]
-              [rhs (cadr lhs-rhs)]
-              [vm1 (unify lhs rhs (state-subst state) metavar?)])
-         (if vm1 (list (cons vm1 constraint)) '()))]
-      [else
-       (filter-map
-        (lambda (other)
-          (and-let* ([_ (not (member other nogood))]
-                     [vm (unify-constraint
-                          constraint
-                          other
-                          (state-subst state)
-                          metavar?)])
-            (cons vm other)))
-        (state-facts state))]))
-
-  (define-check (constrain [state state?]
-                           [cs (disjoin constraint?
-                                        (listof constraint?))])
-    (disjoin not state?)
-    (let* ([cs (if (constraint? cs) (list cs) cs)]
-           [cs (filter
-                (lambda (c)
-                  (null?
-                   (query-constraint state c (const #f) '())))
-                cs)])
-      (if (null? cs)
-          state
-          (let*-values ([(same-checks constraints)
-                         (partition same-check? cs)]
-                        [(facts)
-                         (append (state-facts state) constraints)]
-                        [(subst)
-                         (unify*
-                          (map
-                           (compose tuple->pair constraint-operands)
-                           same-checks)
-                          (state-subst state))]
-                        [(state1) (and subst (make-state subst facts))])
-            state1))))
-
-  (define-check (unify-constraint [lcon rcon constraint?]
-                                  [vmap varmap?]
-                                  [var? procedure?])
-    (disjoin not varmap?)
-    (and (eq? (constraint-constructor lcon)
-              (constraint-constructor rcon))
-         (unify (constraint-operands lcon)
-                (constraint-operands rcon)
-                vmap
-                var?)))
-
-  (define-check (rule-var? [rule rule?])
-    procedure?
-    (lambda (vr)
-      (memq vr (rule-free-variables rule))))
-
-  (define-check (instantiate-consequences [rule rule?] [vmap varmap?])
-    goal?
-    (apply (rule-consequences rule)
-           (walk* (rule-free-variables rule) vmap)))
-
-  (define-check (retract [state state?] [witnesses (listof constraint?)])
-    state?
-    (make-state
-     (state-subst state)
-     (filter (lambda (c) (not (memq c witnesses)))
-             (state-facts state))))
-
-  (define-check (apply-rule [state state?] [rule rule?])
-    (disjoin not (pairof goal? (listof constraint?)))
-    (define-check (find-assignment [vmap varmap?]
-                                   [prereqs (listof posting?)]
-                                   [seen (listof constraint?)])
-      (disjoin not (pairof varmap? (listof constraint?)))
-
-      (if (null? prereqs)
-          (cons vmap '())
-          (let* ([prereq (car prereqs)]
-                 [potential-inst (query-constraint
-                                  (make-state vmap (state-facts state))
-                                  (posting-constraint prereq)
-                                  (rule-var? rule)
-                                  seen)])
-            (exists (lambda (varmap.witness)
-                      (check ((pairof varmap? constraint?) varmap.witness))
-                      (and-let* ([witness (cdr varmap.witness)]
-                                 [varmap (car varmap.witness)]
-                                 [varmap^.witnesses
-                                  (find-assignment varmap
-                                                   (cdr prereqs)
-                                                   (cons witness seen))])
-                        (cons (car varmap^.witnesses)
-                              (cons witness (cdr varmap^.witnesses)))))
-                    potential-inst))))
-    (and-let* ([as (find-assignment
-                    (state-subst state)
-                    (rule-prereqs rule)
-                    '())]
-               [consq (instantiate-consequences rule (car as))])
-      (cons consq (cdr as)))))
+             (on equal? state-facts)
+             (on equal? state-hist))))
