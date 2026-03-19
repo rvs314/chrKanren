@@ -114,8 +114,14 @@
   (define parallel-sets? (on eq? set-tail))
 
   (define-rules
-    (forall (t) (forget (== t set-nil)) <=> (=== t set-nil))
-    (forall (t) (forget (== set-nil t)) <=> (=== set-nil t))
+    (forall (t)
+      (forget (== t set-nil))
+      <=>
+      (=== t set-nil))
+    (forall (t)
+      (forget (== set-nil t))
+      <=>
+      (=== set-nil t))
     (forall (t s p)
       (forget (== p (set-cons t s)))
       (ground (negate set-pair?) p)

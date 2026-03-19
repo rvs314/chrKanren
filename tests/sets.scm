@@ -108,12 +108,12 @@
 
   (check (lset= equal?
           (run* (q)
-            (== (set 1 q) (set 1 q)))
+            (== (set q 1) (set 1 q)))
           '(((1)) ((_.0)))))
 
   (check (lset= equal?
-          (run* (p q r)
-            (== (set p q r) (set p q r)))
+                (run* (p q r)
+                  (== (set r q p) (set p q r)))
           '(((_.0 _.0 _.0))
             ((_.0 _.0 _.1))
             ((_.0 _.1 _.0))
