@@ -8,7 +8,6 @@
           goal-generator stream-generator
           random-var)
   (import (rnrs)
-          (chrKanren check)
           (chrKanren utils)
           (chrKanren relation)
           (chrKanren goals)
@@ -53,9 +52,9 @@
         [prior-case ...]
         [[(weight 1) body ...] rst ...])]))
 
-  (define (random-choice . xs)
-    (check (pair? xs))
-    (list-ref xs (random-integer (length xs))))
+  (define (random-choice x . xs)
+    (let ([xs (cons x xs)])
+      (list-ref xs (random-integer (length xs)))))
 
   (define-syntax random-case
     (syntax-rules ()

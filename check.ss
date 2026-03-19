@@ -1,11 +1,13 @@
 #!r6rs
 
 (library (chrKanren check)
-  (export check
+  (export check debug-check
           &failed-check make-failed-check failed-check?
           failed-check-results
-          define-check)
-  (import (rnrs) (chrKanren utils))
+          named-lambda-check lambda-check define-check)
+  (import (rnrs)
+          (chrKanren utils)
+          (srfi :98 os-environment-variables))
 
   (define-condition-type &failed-check &violation
     make-failed-check failed-check?
@@ -56,19 +58,24 @@
        (let ([fact-value fact])
          (unless fact-value
            (raise-continuable
-            (fail-check msg 'fact `((fact . ,fact-value) (more . ,more) ...)))))]
+            (fail-check msg 'fact `((fact . ,fact-value)
+                                    (more . ,more)
+                                    ...)))))]
       [(check we)
        (check we #f)]))
 
-  (define-syntax define-check-helper
+  (define-syntax-rule (debug-check arg ...)
+    (check arg ...))
+
+  (define-syntax named-lambda-check-helper
     (syntax-rules ()
-      [(define-check-helper
-         (name argname ...)
-         ()
-         result?
-         (check-call ...)
-         (body ...))
-       (define (name argname ...)
+      [(named-lambda-check-helper
+        (name argname ...)
+        ()
+        result?
+        (check-call ...)
+        (body ...))
+       (named-lambda name (argname ...)
          check-call ...
          (check (procedure? result?) '(result contract of name))
          (let-values ([(rs) result?]
@@ -76,30 +83,52 @@
                       [results (let () body ...)])
            (check (apply result? results) '(return value of name))
            (apply values results)))]
-      [(define-check-helper
+      [(named-lambda-check-helper
          (name argname ...)
          ([arg ... contract] more ...)
          result?
          (check-call ...)
          (body ...))
-       (define-check-helper
+       (named-lambda-check-helper
          (name argname ... arg ...)
          (more ...)
          result?
-         (check-call ... (check (contract arg) '(argument arg of name)) ...)
+         (check-call ...
+                     (check (contract arg)
+                            '(argument arg of name))
+                     ...)
          (body ...))]
-      [(define-check-helper
+      [(named-lambda-check-helper
          (name argname ...)
          (arg more ...)
          result?
          (check-call ...)
          (body ...))
-       (define-check-helper
+       (named-lambda-check-helper
          (name argname ... arg)
          (more ...)
          result?
          (check-call ...)
          (body ...))]))
 
+  (define-syntax-rule (named-lambda-check name (arg ...)
+                        result?
+                        b body ...)
+    (named-lambda-check-helper (name)
+                               (arg ...)
+                               result?
+                               ()
+                               (b body ...)))
+
+  (define-syntax-rule (lambda-check (args ...)
+                        result?
+                        b body ...)
+    (named-lambda-check anonymous-name (args ...)
+      result?
+      b
+      body ...))
+
   (define-syntax-rule (define-check (name arg ...) result? b body ...)
-    (define-check-helper (name) (arg ...) result? () (b body ...))))
+    (define name (named-lambda-check name (arg ...)
+                   result?
+                   b body ...) )))

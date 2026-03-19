@@ -31,9 +31,8 @@
     (fields left right)
     (protocol
      (lambda (new)
-       (lambda (left right)
-         (check (stream? left) "choice-left is a stream")
-         (check (stream? right) "choice-right is a stream")
+       (lambda-check ([left stream?] [right stream?])
+         stream?
          (cond
            [(empty? left)  right]
            [(empty? right) left]
@@ -44,9 +43,8 @@
     (fields state goal)
     (protocol
      (lambda (new)
-       (lambda (st gl)
-         (check (not (stream? st)) "pause-state is not a stream" st)
-         (check (not (stream? gl)) "pause-goal is not a stream" gl)
+       (lambda-check ([st (negate stream?)]
+                      [gl (negate stream?)])
          ((new) st gl)))))
 
   (define-record-type bind
@@ -54,9 +52,7 @@
     (fields stream goal)
     (protocol
      (lambda (new)
-       (lambda (strm gl)
-         (check (stream? strm))
-         (check (not (stream? gl)) "bind-goal is not a stream" gl)
+       (lambda ([strm stream?] [gl (negate stream?)])
          (if (empty? strm)
              strm
              ((new) strm gl))))))
@@ -71,8 +67,8 @@
     (fields stream)
     (protocol
      (lambda (new)
-       (lambda (strm)
-         (check (stream? strm))
+       (lambda-check ([strm stream?])
+         stream?
          (if (empty? strm)
              strm
              ((new) strm))))))

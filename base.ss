@@ -21,7 +21,6 @@
           (chrKanren rule)
           (chrKanren streams)
           (chrKanren unify)
-          (chrKanren check)
           (chrKanren prelude unification)
           (chrKanren prelude disunification)
           (chrKanren prelude types)

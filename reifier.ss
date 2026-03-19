@@ -96,7 +96,8 @@
              (let* ([v* (varmap-lookup obj vm)])
                (cond
                  [(var? v*)
-                  (check (eq? v* obj))
+                  (unless (eq? v* obj)
+                    (error 'reify!))
                   (let ([nm (variable-namer v*)])
                     (hashtable-set! seen-objects v* nm)
                     nm)]

@@ -6,7 +6,6 @@
   (import (rnrs)
           (only (srfi :1 lists) reduce-right)
           (chrKanren utils)
-          (chrKanren check)
           (chrKanren vars))
 
   #|
@@ -82,9 +81,10 @@
                   [(and dy (not dx)) #f]
                   [(and dx dy)       #f]
                   [else              (cdr<=? (cdr x) (cdr y))]))]
-        [else (check #f
-                     "What?"
-                     (compare car<=? (car x) (car y)))]))
+        [else
+         (assertion-violation
+          "Invalid comparison result"
+          (compare car<=? (car x) (car y)))]))
     (restrict pair? pair<=))
 
   (define (make-lex<=? elem<=?)

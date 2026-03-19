@@ -13,8 +13,8 @@
     (fields constraints)
     (protocol
      (lambda (new)
-       (lambda (obj)
-         (check (list? obj))
+       (lambda-check ([obj list?])
+         partial?
          (new obj)))))
 
   (define no-info (at-least '())))

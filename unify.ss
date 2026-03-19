@@ -16,7 +16,12 @@
     (define name
       (case-lambda
         [(obj vm) (name obj vm var?)]
-        [(obj vm metavar?) body ...])))
+        [(obj vm metavar?)
+         ((named-lambda-check name
+              (obj [vm varmap?] [var? procedure?])
+            any?
+            body ...)
+          obj vm metavar?)])))
 
   (define-walk (walk obj vm var?)
     (let walk ([obj obj])
@@ -56,14 +61,16 @@
         [(or (atom? obj) (var? obj)) obj]
         [else (error 'walk* "I'm not sure what this is" obj)])))
 
-  (define-check (square-varmap [vm varmap?]) varmap?
+  (define-check (square-varmap [vm varmap?])
+    varmap?
     (alist->varmap
      (filter (lambda (k.v)
                (not (equal? (car k.v) (cdr k.v))))
              (map (lambda (k) (cons k (walk* k vm)))
                   (delete-duplicates (map car (varmap->alist vm)))))))
 
-  (define-check (copy-term [term any?] [metavar? procedure?]) any?
+  (define-check (copy-term [term any?] [metavar? procedure?])
+    any?
     (define/memoized (new-var var)
       (using (make-eq-hashtable))
       (make-var (var-name var)))

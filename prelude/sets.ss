@@ -35,12 +35,12 @@
 
   (define set? (disjoin set-null? set-pair?))
 
-  (define (set-first st)
-    (check (set-pair? st))
+  (define-check (set-first [st set-pair?])
+    any?
     (vector-ref st 1))
 
-  (define (set-rest st)
-    (check (set-pair? st))
+  (define-check (set-rest [st set-pair?])
+    any?
     (vector-ref st 2))
 
   (define (set-cons h st)
@@ -56,8 +56,7 @@
         (set-tail (set-rest st))
         st))
 
-  (define (make-set head tail)
-    (check (list? head) 'make-set)
+  (define-check (make-set [head list?] tail)
     (fold-right set-cons tail head))
 
   (define (list->set lst) (make-set lst set-nil) )

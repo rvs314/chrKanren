@@ -229,7 +229,10 @@
              (propagate-constraints s1)
              empty-stream))]
       [else
-       (check #f "Not sure how to start goal" st gl)]))
+       (assertion-violation 'start
+                            "Not sure how to start goal"
+                            st
+                            gl)]))
 
   (define-check (step [strm stream?])
     stream?

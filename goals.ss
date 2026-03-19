@@ -34,9 +34,8 @@
     (fields left right)
     (protocol
      (lambda (new)
-       (lambda (l r)
-         (check (goal? l))
-         (check (goal? r))
+       (lambda-check ([l goal?] [r goal?])
+         conjunction?
          ((new) l r)))))
 
   (define (conj . cs)
@@ -47,9 +46,8 @@
     (fields left right)
     (protocol
      (lambda (new)
-       (lambda (l r)
-         (check (goal? l))
-         (check (goal? r))
+       (lambda-check ([l goal?] [r goal?])
+         disjunction?
          ((new) l r)))))
 
   (define (disj . cs)
