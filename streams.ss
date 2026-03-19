@@ -45,6 +45,7 @@
      (lambda (new)
        (lambda-check ([st (negate stream?)]
                       [gl (negate stream?)])
+         pause?
          ((new) st gl)))))
 
   (define-record-type bind
@@ -52,7 +53,8 @@
     (fields stream goal)
     (protocol
      (lambda (new)
-       (lambda ([strm stream?] [gl (negate stream?)])
+       (lambda-check ([strm stream?] [gl (negate stream?)])
+         stream?
          (if (empty? strm)
              strm
              ((new) strm gl))))))

@@ -5,3 +5,4 @@ attic
 *.log
 /tests/compiled/
 *.html
+/perf.txt

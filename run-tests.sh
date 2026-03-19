@@ -22,7 +22,9 @@ END=`date "+%s%3N"`
 if [ $FAILURES -eq 0 ]; then
     DURATION="$(($END-$START))"
     echo "Tests passed in $DURATION milliseconds"
-    echo "$(git show | head -n1): $DURATION" >> perf.txt
+    if [ "$DEBUG" = "OFF" ]; then
+        echo "$(git show | head -n1) $DURATION" >> perf.txt
+    fi
 else
     echo "Some Tests Failed!"
 fi

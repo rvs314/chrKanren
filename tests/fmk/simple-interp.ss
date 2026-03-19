@@ -7,6 +7,8 @@
         (chrKanren compare)
         (chrKanren tests fmk shim))
 
+(*finite-maturation-limit* 1000000)
+
 (defrel (evalo expr val)
   (eval-expro expr '() val))
 

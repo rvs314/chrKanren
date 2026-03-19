@@ -83,34 +83,36 @@
          (error 'reify-object!
                 "Object must be either a pair or a vector")]))
     (define (reify! obj)
-      (if (hashtable-contains? seen-objects obj)
-          (hashtable-ref seen-objects obj 'ERROR)
-          (cond
-            [(and (var? obj)
-                  (let ([cv (varmap-lookup obj vm)])
-                    (and (not (eq? obj cv))
-                         (var? obj)
-                         cv)))
-             => reify!]
-            [(var? obj)
-             (let* ([v* (varmap-lookup obj vm)])
-               (cond
-                 [(var? v*)
-                  (unless (eq? v* obj)
-                    (error 'reify!))
-                  (let ([nm (variable-namer v*)])
-                    (hashtable-set! seen-objects v* nm)
-                    nm)]
-                 [(object? v*)
-                  (hashtable-set! seen-objects obj v*)
-                  (reify-object! v*)
-                  v*]
-                 [else
-                  v*]))]
-            [(object? obj)
-             (reify-object! obj)
-             obj]
-            [else obj])))
+      (hashtable-ref-or-compute!
+       seen-objects
+       obj
+       (lambda ()
+         (cond
+           [(and (var? obj)
+                 (let ([cv (varmap-lookup obj vm)])
+                   (and (not (eq? obj cv))
+                        (var? obj)
+                        cv)))
+            => reify!]
+           [(var? obj)
+            (let* ([v* (varmap-lookup obj vm)])
+              (cond
+                [(var? v*)
+                 (unless (eq? v* obj)
+                   (error 'reify! "Reifier assumes objects are already seen"))
+                 (let ([nm (variable-namer v*)])
+                   (hashtable-set! seen-objects v* nm)
+                   nm)]
+                [(object? v*)
+                 (hashtable-set! seen-objects obj v*)
+                 (reify-object! v*)
+                 v*]
+                [else
+                 v*]))]
+           [(object? obj)
+            (reify-object! obj)
+            obj]
+           [else obj]))))
     reify!)
 
   (define (reify-constraint con)

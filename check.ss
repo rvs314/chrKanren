@@ -7,7 +7,8 @@
           named-lambda-check lambda-check define-check)
   (import (rnrs)
           (chrKanren utils)
-          (srfi :98 os-environment-variables))
+          (chrKanren debug)
+          (for (srfi :98 os-environment-variables) expand))
 
   (define-condition-type &failed-check &violation
     make-failed-check failed-check?
@@ -65,7 +66,8 @@
        (check we #f)]))
 
   (define-syntax-rule (debug-check arg ...)
-    (check arg ...))
+    (if-debugging
+     (check arg ...)))
 
   (define-syntax named-lambda-check-helper
     (syntax-rules ()
@@ -75,14 +77,17 @@
         result?
         (check-call ...)
         (body ...))
-       (named-lambda name (argname ...)
-         check-call ...
-         (check (procedure? result?) '(result contract of name))
-         (let-values ([(rs) result?]
-                      [(_) (check (procedure? result?))]
-                      [results (let () body ...)])
-           (check (apply result? results) '(return value of name))
-           (apply values results)))]
+       (if-debugging
+        (named-lambda name (argname ...)
+          check-call ...
+          (check (procedure? result?) '(result contract of name))
+          (let-values ([(rs) result?]
+                       [(_) (check (procedure? result?))]
+                       [results (let () body ...)])
+            (check (apply result? results) '(return value of name))
+            (apply values results)))
+        (named-lambda name (argname ...)
+          body ...))]
       [(named-lambda-check-helper
          (name argname ...)
          ([arg ... contract] more ...)
@@ -120,13 +125,12 @@
                                ()
                                (b body ...)))
 
-  (define-syntax-rule (lambda-check (args ...)
+  (define-syntax-rule (lambda-check (arg ...)
                         result?
                         b body ...)
-    (named-lambda-check anonymous-name (args ...)
+    (named-lambda-check anonymous-lambda (arg ...)
       result?
-      b
-      body ...))
+      b body ...))
 
   (define-syntax-rule (define-check (name arg ...) result? b body ...)
     (define name (named-lambda-check name (arg ...)

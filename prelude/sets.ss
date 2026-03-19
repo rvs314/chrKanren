@@ -57,6 +57,7 @@
         st))
 
   (define-check (make-set [head list?] tail)
+    any?
     (fold-right set-cons tail head))
 
   (define (list->set lst) (make-set lst set-nil) )

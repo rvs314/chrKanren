@@ -299,11 +299,14 @@
       (== q `(3 . (,b . ,b)))))
   '((3 _.0 . _.0)))
 
-
-;; This test checks that, for any series of constructors `f`, x ≠ (f x) ⇒ ⊤
-;; in chrKanren this isn't true, as not all constructors are injective.
-;; That said, it does happen to be true of the `cons` constructor, which this
-;; test actually checks.
+;; This test checks that, for any constructor `f`, x ≠ (f x)
+;; in chrKanren this isn't true, as set constructors aren't injective.
+;; That said, it does happen to be true of the `cons` constructor,
+;; which is what this test actually checks.
+;; This is hard to check at reification-time, as occurs-checking
+;; is outsourced to CHR, so I'm ignoring it for the time being.
+;; The results are still sound, they just occasionally post some
+;; trivially true constaints.
 (define-test test-45b
   (test-count 0)
   (check (equal?
