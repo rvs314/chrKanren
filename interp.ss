@@ -186,7 +186,7 @@
 
   (define-check (propagate-constraints [state state?])
     (disjoin* propagating? solution?)
-    (or (exists (lambda (rule) (apply-rule rule state))
+    (or (exists (cut apply-rule <> state)
                 (*constraint-handling-rules*))
         (make-solution state empty-stream)))
 
@@ -212,22 +212,22 @@
       [(failure? gl)     empty-stream]
       [(success? gl)     (make-solution st empty-stream)]
       [(disjunction? gl)
-       (step (make-choice (make-pause st (disjunction-left gl))
-                          (make-pause st (disjunction-right gl))))]
+       (step (make-choice (make-paused-step st (disjunction-left gl))
+                          (make-paused-step st (disjunction-right gl))))]
       [(conjunction? gl)
-       (step (make-bind (make-pause st (conjunction-left gl))
+       (step (make-bind (make-paused-step st (conjunction-left gl))
                         (conjunction-right gl)))]
       [(delay? gl)
-       (make-pause st ((delay-cont gl)))]
+       (make-paused-step st ((delay-cont gl)))]
       [(call? gl)
        (start st (apply call-relation
                         (call-target gl)
                         (call-arguments gl)))]
       [(posting? gl)
-       (let ([s1 (constrain st (posting-constraint gl))])
-         (if s1
-             (propagate-constraints s1)
-             empty-stream))]
+       (step (let ([s1 (constrain st (posting-constraint gl))])
+                (if s1
+                    (make-paused-propagation s1)
+                    empty-stream)))]
       [else
        (assertion-violation 'start
                             "Not sure how to start goal"
@@ -244,14 +244,14 @@
            [(empty? s1) s2]
            [(solution? s1)
             (make-solution (solution-first s1)
-                           (make-choice (solution-rest s1) s2))]
+                           (make-choice s2 (solution-rest s1)))]
            [else (make-choice s2 s1)]))]
       [(propagating? strm)
        (let ([s (age (propagating-stream strm))])
          (cond
            [(empty? s) s]
            [(solution? s)
-            (step (make-choice (propagate-constraints (solution-first s))
+            (step (make-choice (make-paused-propagation (solution-first s))
                                (make-propagating (solution-rest s))))]
            [else (make-propagating s)]))]
       [(bind? strm)
@@ -260,10 +260,13 @@
          (cond
            [(empty? s) s]
            [(solution? s)
-            (step (make-choice (make-pause (solution-first s) g)
+            (step (make-choice (make-paused-step (solution-first s) g)
                                (make-bind (solution-rest s) g)))]
            [else (make-bind s g)]))]
-      [(pause? strm) (start (pause-state strm) (pause-goal strm))]
+      [(paused-step? strm)
+       (start (paused-step-state strm) (paused-step-goal strm))]
+      [(paused-propagation? strm)
+       (propagate-constraints (paused-propagation-state strm))]
       [else          strm]))
 
   (define take+drop

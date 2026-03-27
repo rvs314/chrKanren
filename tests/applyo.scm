@@ -5,6 +5,7 @@
         (chrKanren utils)
         (chrKanren prelude types)
         (chrKanren test)
+        (only (srfi :1 lists) lset=)
         (chrKanren generator)
         (chrKanren check)
         (chrKanren compare))
@@ -133,7 +134,8 @@
             (callo farmo p)
             (callo peto p))
           '(((rabbit)))))
-  (check (equal?
+  (check (lset=
+          equal?
           (run* (p)
             (fresh (q)
               (callo q p)

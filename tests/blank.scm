@@ -19,21 +19,8 @@
         (only (srfi :1 lists) lset=))
 
 
-(define-constraint (<=o lesser greater))
+(define-relation (loopy x)
+  (loopy x))
 
-(define-rules
-  (forall (x)
-    (forget (<=o x x)))
-  (forall (p q)
-    (forget (<=o p q))
-    (<=o p q))
-  (forall (x y)
-    (forget (<=o x y))
-    (forget (<=o y x))
-    <=>
-    (=== x y))
-  (forall (x y z)
-    (<=o x y)
-    (<=o y z)
-    <=>
-    (<=o x z)))
+(define gl (fresh (q) (disj (== q 1) (loopy q))))
+(define strm (start empty-state gl))

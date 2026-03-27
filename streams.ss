@@ -2,9 +2,13 @@
 
 (library (chrKanren streams)
   (export stream stream?
-          make-solution solution solution? solution-first solution-rest
+          make-solution solution solution? solution-first
+          solution-rest
           make-choice   choice   choice?   choice-left choice-right
-          make-pause    pause    pause?    pause-state pause-goal
+          make-paused-step  paused-step paused-step? paused-step-state
+          paused-step-goal
+          make-paused-propagation paused-propagation?
+          paused-propagation-state
           make-bind     bind     bind?     bind-stream bind-goal
           empty-stream  empty    empty?
           make-propagating propagating propagating? propagating-stream
@@ -38,15 +42,24 @@
            [(empty? right) left]
            [else ((new) left right)])))))
 
-  (define-record-type pause
+  (define-record-type paused-step
     (parent stream)
     (fields state goal)
     (protocol
      (lambda (new)
        (lambda-check ([st (negate stream?)]
                       [gl (negate stream?)])
-         pause?
+         paused-step?
          ((new) st gl)))))
+
+  (define-record-type paused-propagation
+    (parent stream)
+    (fields state)
+    (protocol
+     (lambda (new)
+       (lambda-check ([st (negate stream?)])
+         paused-propagation?
+         ((new) st)))))
 
   (define-record-type bind
     (parent stream)
@@ -69,7 +82,7 @@
     (fields stream)
     (protocol
      (lambda (new)
-       (lambda-check ([strm stream?])
+       (named-lambda-check make-propagating ([strm stream?])
          stream?
          (if (empty? strm)
              strm
@@ -81,4 +94,4 @@
   (define singleton-solution?
     (conjoin solution? (compose empty? solution-rest)))
 
-  (define mature? (disjoin empty? solution?)))
+  (define mature? (disjoin* empty? solution?)))
