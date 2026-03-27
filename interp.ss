@@ -49,7 +49,7 @@
   (define-check (unify-constraint [lcon rcon constraint?]
                                   [subst varmap?]
                                   [var? procedure?])
-    (disjoin not varmap?)
+    (disjoin* not varmap?)
     (and (eq? (constraint-constructor lcon)
               (constraint-constructor rcon))
          (unify (constraint-operands lcon)
@@ -93,7 +93,7 @@
 
   (define-check (constrain [state state?]
                            [cs constraint?])
-    (disjoin not state?)
+    (disjoin* not state?)
     (let*-values ([(cs) (list cs)]
                   [(same-checks constraints)
                    (partition same-check? cs)]
@@ -114,7 +114,7 @@
   (define-check (make-seen-before? [rule rule?] [state state?])
     procedure?
     (define-check (seen-before? [witnesses (listof constraint?)])
-      (disjoin not history-entry?)
+      (disjoin* not history-entry?)
       (define new-fact (cons rule witnesses))
       (find (lambda (old-fact)
               (and (= (length new-fact) (length old-fact))
@@ -123,7 +123,7 @@
     seen-before?)
 
   (define-check (apply-rule [rule rule?] [state state?])
-    (disjoin not propagating?)
+    (disjoin* not propagating?)
     (define rule-variable? (cut rule-free? rule <>))
     ;; Solves a list of prerequisites for a given substitution
     ;; Returns a stream of possible solutions, which are
@@ -185,7 +185,7 @@
           (apply (rule-consequences rule) args0))))))
 
   (define-check (propagate-constraints [state state?])
-    (disjoin propagating? solution?)
+    (disjoin* propagating? solution?)
     (or (exists (lambda (rule) (apply-rule rule state))
                 (*constraint-handling-rules*))
         (make-solution state empty-stream)))

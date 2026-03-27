@@ -1,197 +1,138 @@
 #!r6rs
 
 (library (chrKanren generator)
-  (export random-choice weight random-case
-          generator random-generator
-          *default-random-size*
-          value-generator varmap-generator state-generator
-          goal-generator stream-generator
-          random-var)
+  (export random-choice *random-size* random-proc
+          goal-generator value-generator relation-generator
+          stream-generator state-generator)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren relation)
           (chrKanren goals)
           (chrKanren streams)
+          (chrKanren check)
           (chrKanren vars)
           (chrKanren varmap)
           (chrKanren state)
+          (only (srfi :1 lists)
+                filter-map make-list list-tabulate append-map)
+          (srfi :26 cut)
           (srfi :39 parameters)
           (srfi :27 random-bits))
 
-  (define-syntax weight (syntax-rules ()))
+  (define *random-size* (make-parameter 100))
 
-  (define-syntax random-case-aux
-    (syntax-rules (weight)
-      [(random-case-aux
-        var
-        prior-weight
-        [[condition body body* ...] ...]
-        [])
-       (let ((var (random-integer prior-weight)))
-         (cond
-           [condition body body* ...]
-           ...))]
-      [(random-case-aux
-        var
-        prior-weight
-        [prior-case ...]
-        [[(weight w) body ...] rst ...])
-       (random-case-aux
-        var
-        (+ prior-weight w)
-        [prior-case ... [(< var (+ prior-weight w)) body ...]]
-        [rst ...])]
-      [(random-case-aux
-        var
-        prior-weight
-        [prior-case ...]
-        [[body ...] rst ...])
-       (random-case-aux
-        var
-        prior-weight
-        [prior-case ...]
-        [[(weight 1) body ...] rst ...])]))
+  (define-check (random-choice [xs list?])
+    any?
+    (list-ref xs (random-integer (length xs))))
 
-  (define (random-choice x . xs)
-    (let ([xs (cons x xs)])
-      (list-ref xs (random-integer (length xs)))))
+  (define-check (random-proc [option1 procedure?]
+                             :rest
+                             [options (listof procedure?)])
+    procedure?
+    (lambda xs
+      (apply (random-choice (cons option1 options)) xs)))
 
-  (define-syntax random-case
-    (syntax-rules ()
-      [(random-case
-        [b b* ...] [c c* ...] ...)
-       (random-case-aux
-        random-var
-        0
-        []
-        [[b b* ...] [c c* ...] ...])]))
+  (define-check (induction-generator [base procedure?]
+                                     [ind procedure?])
+    procedure?
+    (lambda-check ([sz natural?])
+      any?
+      (if (>= (or (and (positive? sz) (/ 1 sz)) 1.0) (random-real))
+          (base (- sz 1))
+          (ind  (- sz 1)))))
 
+  (define-check (list-generator [el procedure?])
+    procedure?
+    (eta
+     (induction-generator
+      (const '())
+      (compose cons (broadcast el (list-generator el))))))
 
-  (define *default-random-size* (make-parameter 100))
+  (define symbols '(a b c d e f g h
+                      i j k l m n o
+                      p q r s t u v
+                      w x y z
+                      foo bar baz
+                      qux quux quuux))
 
-  (define generator
-    (case-lambda
-      [(proc) (generator (*default-random-size*) proc)]
-      [(mx proc) (case-lambda
-                    [()   (proc (random-integer (max 1 mx)))]
-                    [(mx) (proc (random-integer (max 1 mx)))])]))
+  (define *vars-in-scope* (make-parameter '()))
 
-  (define random-relation-counter 0)
+  (define-check (var-generator _)
+    (disjoin* not var?)
+    (and (pair? (*vars-in-scope*))
+         (random-choice (*vars-in-scope*))))
 
-  (define relation-generator
-    (generator
-     (lambda (k)
-       (define the-body (goal-generator (- k 1)))
-       (define new-relation
-         (make-relation
-          (string->symbol
-           (string-append "random-relation-"
-                          (number->string random-relation-counter)))
-          (list)
-          (lambda () the-body)))
-       (set! random-relation-counter (+ 1 random-relation-counter))
-       new-relation)))
+  (define state-generator (const empty-state))
 
-  (define (make-random-generator gen1 gen+)
-    (generator
-     (lambda (k)
-       (if (>= k 3)
-           ((apply random-choice gen+) (- k 1))
-           ((apply random-choice gen1))))))
-
-  (define (split-evenly combine)
-    (lambda (k+j)
-      (set! k+j (max k+j 0))
-      (let* ([k (random-integer (+ 1 k+j))]
-             [j (- k+j k)])
-        (combine (+ 1 k) (+ 1 j)))))
-
-  (define-syntax-rule (random-generator subterms ...)
-    (random-generator-aux (subterms ...) () ()))
-
-  (define-syntax random-generator-aux
-    (syntax-rules ()
-      [(random-generator-aux () (gen1 ...) (gen+ ...))
-       (make-random-generator
-        (list gen1 ...)
-        (list gen+ ...))]
-      [(random-generator-aux ([() body ...] more ...)
-                             (gen1 ...)
-                             g2)
-       (random-generator-aux (more ...)
-                             ((lambda () body ...) gen1 ...)
-                             g2)]
-      [(random-generator-aux ([(x) body ...] more ...)
-                             g1
-                             (gen2 ...))
-       (random-generator-aux (more ...)
-                             g1
-                             ((lambda (x) body ...) gen2 ...))]    
-      [(random-generator-aux ([(x y) body ...] more ...)
-                             g1
-                             (gen2 ...))
-       (random-generator-aux (more ...)
-                             g1
-                             ((split-evenly (lambda (x y) body ...))
-                              gen2 ...))]))   
-
-  (define goal-generator
-    (random-generator
-     [() succeed]
-     [() fail]
-     [(x) (make-call (relation-generator x) '())]
-     [(l r) (disj (goal-generator l) (goal-generator r))]
-     [(l r) (conj (goal-generator l) (goal-generator r))]
-     ;; TODO: replace this clause with syntactic equality primitive
-     ;; and upgrade generator to include constraint calls
-     #;[(l r) (== (value-generator l) (value-generator r))]))
-
-  (define stream-generator
-    (random-generator
-     [()    empty-stream]
-     [(l r) (make-solution (state-generator l) (stream-generator r))]
-     [(l r) (make-bind (stream-generator l) (goal-generator r))]
-     [(l r) (make-choice (stream-generator l) (stream-generator r))]
-     [(l r) (make-pause (state-generator l) (goal-generator r))]))
-
-  (define var-names '(a b c d e f g h
-                        i j k l m n o
-                        p q r s t u v
-                        w x y z
-                        foo bar baz
-                        qux quux quuux))
-
-  (define *random-vars* (make-parameter '()))
-
-  (define (random-var)
-    (if (or (null? (*random-vars*)) (zero? (random-integer 5)))
-        (let ([new (make-var (apply random-choice var-names))])
-          (*random-vars* (cons new (*random-vars*)))
-          new)
-        (apply random-choice (*random-vars*))))
-
-  (define varmap-generator
-    (random-generator
-     [()    empty-varmap]
-     [(l r) (or (varmap-extend (random-var)
-                               (value-generator l)
-                               (varmap-generator r))
-                (varmap-generator (+ l r)))]))
+  (define-check (random-var)
+    var?
+    (define name (random-choice symbols))
+    (make-var name))
 
   (define value-generator
-    (random-generator
-     [()    '()]
-     [()    (- (random-integer 100) 50)]
-     [()    (random-var)]
-     [(l r) (cons (value-generator l) (value-generator r))]
-     [(l r) (let ([vs (make-vector l)])
-              (let loop ([i 0])
-                (when (< i l)
-                  (vector-set! vs i (value-generator (div r l)))
-                  (loop (+ i 1))))
-              vs)]))
+    (eta
+     (induction-generator
+      (random-proc (const '())
+                   (const* (- (random-integer 100) 50))
+                   (const* (random-choice symbols))
+                   var-generator)
+      (compose cons (broadcast value-generator value-generator)))))
 
-  (define (state-generator . xs)
-    (make-state (apply varmap-generator xs)
-                '()
-                '())))
+  (define *random-relations* (make-parameter '()))
+
+  (define (new-relation-generator k)
+    (define name (symbol "random-relation-" (length (*random-relations*))))
+    (define arity (random-integer 3))
+    (define arg-vars (list-tabulate arity (const* (random-var))))
+    (define body (parameterize ([*vars-in-scope* (append arg-vars (*vars-in-scope*))])
+                   (goal-generator k)))
+    (define rel
+      (make-relation
+       name
+       (map var-name arg-vars)
+       (case arity
+         [(0) (lambda () body)]
+         [(1) (let ([v (car arg-vars)])
+                (lambda (a) (conj (=== a v) body)))]
+         [(2) (let ([v1 (car arg-vars)] [v2 (cadr arg-vars)])
+                (lambda (a b) (conj (=== a v1) (=== b v2) body)))])))
+    (*random-relations* (cons rel (*random-relations*)))
+    rel)
+
+  (define-check (relation-generator [k natural?])
+    relation?
+    (if (null? (*random-relations*))
+        (new-relation-generator k)
+        (induction-generator
+         (const* (random-choice (*random-relations*)))
+         new-relation-generator)))
+
+  (define goal-generator
+    (eta (induction-generator
+          (random-proc (const succeed)
+                       (const fail))
+          (random-proc
+           (compose (random-proc disj conj)
+                    (broadcast goal-generator goal-generator))
+           (compose === (broadcast value-generator value-generator))
+           (lambda-check ([sz natural?])
+             goal?
+             (fresh (p)
+               (parameterize ([*vars-in-scope* (cons p (*vars-in-scope*))])
+                 (goal-generator sz))))
+           (lambda-check ([sz natural?])
+             call?
+             (define rel  (relation-generator sz))
+             (define args
+               (list-tabulate (length (relation-args rel))
+                              (const* (value-generator sz))))
+             (make-call rel args))))))
+
+  (define stream-generator
+    (eta (induction-generator
+          (const empty-stream)
+          (random-proc
+           (compose make-solution    (broadcast state-generator stream-generator))
+           (compose make-bind        (broadcast stream-generator goal-generator))
+           (compose make-choice      (broadcast stream-generator stream-generator))
+           (compose make-paused-step (broadcast state-generator goal-generator)))))))

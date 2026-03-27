@@ -7,8 +7,6 @@
 
 (puts (if-debugging "DEBUG" "NODEBUG"))
 
-(define-check (foo [x integer?])
-  string?
-  3)
+(define-check (foo [x integer?]) string? 3)
 
 (foo "nine")

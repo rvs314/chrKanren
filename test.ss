@@ -26,10 +26,7 @@
 
   (define *test-generator-growth-function*
     (make-parameter
-     (lambda (input)
-       (exact
-        (floor
-         (expt 2.5 (* input 10)))))))
+     values))
 
   (define (test-size input)
     ((*test-generator-growth-function*) input))
@@ -110,7 +107,7 @@
                (repeatedly
                 count
                 (lambda (i)
-                  (let ([nm (gen (test-size (/ i count)))] ...)
+                  (let ([nm (gen (test-size (floor (/ i count))))] ...)
                     (test-body nm ...))))))]
            [(zero? count)
             (run-test

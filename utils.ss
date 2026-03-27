@@ -7,7 +7,8 @@
           eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
-          compose const conjoin disjoin negate on
+          compose const const* broadcast
+          conjoin conjoin* disjoin disjoin* negate on
           natural?
           and-proc or-proc
           sort merge make-tree=?
@@ -47,29 +48,50 @@
   (define (or-proc . objs)
     (reduce (lambda (x y) (or x y)) #f objs))
 
+  (define-syntax conjoin*
+    (syntax-rules ()
+      [(conjoin* fn ...)
+       (lambda (x) (and (fn x) ...))]))
+
   (define (conjoin . fns)
     (lambda xs
       (for-all (cut apply <> xs) fns)))
 
-  (define natural? (conjoin exact? positive? integer?))
+  (define (compose . fs)
+    (define (compose₂ f1 f2)
+      (lambda xs
+        (call-with-values
+         (lambda () (apply f1 xs))
+         f2)))
+    (fold-left compose₂ values (reverse fs)))
+
+  (define (broadcast g . gs)
+    (lambda as
+      (apply values (map (cut apply <> as) (cons g gs)))))
+
+  (define negate (cut compose not <>))
+
+  (define-syntax disjoin*
+    (syntax-rules ()
+      [(disjoin* fn ...)
+       (lambda (x) (or (fn x) ...))]))
 
   (define (disjoin . fns)
     (lambda xs
       (exists (cut apply <> xs) fns)))
 
-  (define negate (cut compose not <>))
+  (define natural? (conjoin exact? (negate negative?) integer?))
 
   (define const
     (case-lambda
       [(x) (lambda _ x)]
       [xs  (lambda _ (apply values xs))]))
 
-  (define any? (const #t))
+  (define-syntax const*
+    (syntax-rules ()
+      [(const* x) (lambda _ x)]))
 
-  (define (compose . fs)
-    (define (compose₂ f1 f2)
-      (lambda xs (call-with-values (cut apply f1 xs) f2)))
-    (fold-left compose₂ values (reverse fs)))
+  (define any? (const #t))
 
   (define (on combine . projs)
     (lambda xs
@@ -260,9 +282,9 @@
     matches?)
 
   (define atom?
-    (disjoin null? number? string? char?
-             boolean? symbol? bytevector?
-             procedure?))
+    (disjoin* null? number? string? char?
+              boolean? symbol? bytevector?
+              procedure?))
 
 
   (define (fixpoint step finished? start0 . start)

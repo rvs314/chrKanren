@@ -23,9 +23,7 @@
           (chrKanren varmap))
 
   (define history-entry?
-    (conjoin pair?
-             (compose rule? car)
-             (compose (listof constraint?) cdr)))
+    (pairof rule? (listof constraint?)))
 
   (define-record-type state
     (fields subst facts hist)

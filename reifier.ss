@@ -63,7 +63,7 @@
   (define (make-helpful-variable-namer)
     (make-variable-namer var-name))
 
-  (define object? (disjoin pair? vector?))
+  (define object? (disjoin* pair? vector?))
 
   (define (make-reifier vm)
     (define seen-objects (make-eq-hashtable))

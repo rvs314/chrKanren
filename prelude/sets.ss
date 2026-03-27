@@ -33,7 +33,7 @@
          (= (vector-length obj) 3)
          (eq? (vector-ref obj 0) 'set)))
 
-  (define set? (disjoin set-null? set-pair?))
+  (define set? (disjoin* set-null? set-pair?))
 
   (define-check (set-first [st set-pair?])
     any?

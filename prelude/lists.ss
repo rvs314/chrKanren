@@ -21,7 +21,7 @@
         (listo d))]))
 
   (define (listo obj)
-    (typeo obj 'lst (disjoin null? pair?) valid-listo))
+    (typeo obj 'lst (disjoin* null? pair?) valid-listo))
 
   (define-relation (label-listo obj)
     (conde

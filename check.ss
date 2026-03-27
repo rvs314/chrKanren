@@ -4,7 +4,8 @@
   (export check debug-check
           &failed-check make-failed-check failed-check?
           failed-check-results
-          named-lambda-check lambda-check define-check)
+          named-lambda-check lambda-check define-check
+          :rest)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren debug)
@@ -69,16 +70,19 @@
     (if-debugging
      (check arg ...)))
 
+  (define-syntax :rest
+    (syntax-rules ()))
+
   (define-syntax named-lambda-check-helper
-    (syntax-rules ()
+    (syntax-rules (:rest)
       [(named-lambda-check-helper
-        (name argname ...)
+        (name . args)
         ()
         result?
         (check-call ...)
         (body ...))
        (if-debugging
-        (named-lambda name (argname ...)
+        (named-lambda name args
           check-call ...
           (check (procedure? result?) '(result contract of name))
           (let-values ([(rs) result?]
@@ -86,8 +90,22 @@
                        [results (let () body ...)])
             (check (apply result? results) '(return value of name))
             (apply values results)))
-        (named-lambda name (argname ...)
+        (named-lambda name args
           body ...))]
+      [(named-lambda-check-helper
+        (name argname ...)
+        (:rest [rest-arg contract])
+        result?
+        (check-call ...)
+        (body ...))
+       (named-lambda-check-helper
+        (name argname ... . rest-arg)
+        ()
+        result?
+        (check-call ...
+                    (check (contract rest-arg)
+                           '(rest-argument of name)))
+        (body ...))]
       [(named-lambda-check-helper
          (name argname ...)
          ([arg ... contract] more ...)
@@ -114,7 +132,9 @@
          (more ...)
          result?
          (check-call ...)
-         (body ...))]))
+         (body ...))]
+
+      ))
 
   (define-syntax-rule (named-lambda-check name (arg ...)
                         result?
