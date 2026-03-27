@@ -270,16 +270,18 @@
     (case-lambda
       [(strm) (take+drop +inf.0 strm)]
       [(n strm)
-       (let ([strm (mature strm)])
-         (cond
-           [(or (zero? n) (empty? strm))
-            (values '() strm)]
-           [(solution? strm)
-            (let-values ([(f r) (take+drop (- n 1) (solution-rest strm))])
-              (values (cons (solution-first strm) f)
-                      r))]
-           [else
-            (error 'take+drop "Mature did not return a mature stream" strm)]))]))
+       (if (zero? n)
+           (values '() strm)
+           (let ([strm (mature strm)])
+             (cond
+               [(empty? strm)
+                (values '() strm)]
+               [(solution? strm)
+                (let-values ([(f r) (take+drop (- n 1) (solution-rest strm))])
+                  (values (cons (solution-first strm) f)
+                          r))]
+               [else
+                (error 'take+drop "Mature did not return a mature stream" strm)])))]))
 
   (define (take . ks)
     (let-values ([(f r) (apply take+drop ks)])
