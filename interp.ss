@@ -116,10 +116,7 @@
     (define-check (seen-before? [witnesses (listof constraint?)])
       (disjoin* not history-entry?)
       (define new-fact (cons rule witnesses))
-      (find (lambda (old-fact)
-              (and (= (length new-fact) (length old-fact))
-                   (for-all eq? new-fact old-fact)))
-            (state-hist state)))
+      (find (cut same-history-entry? <> new-fact) (state-hist state)))
     seen-before?)
 
   (define-check (apply-rule [rule rule?] [state state?])

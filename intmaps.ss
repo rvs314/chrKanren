@@ -1,7 +1,8 @@
 #!r6rs
 
 (library (chrKanren intmaps)
-  (export)
+  (export intmap-ref intmap-set intmap->alist
+          intmap-values not-found?)
   (import (rnrs) (chrKanren utils) (chrKanren check))
 
   #|

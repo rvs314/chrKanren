@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren state)
-  (export history-entry?
+  (export history-entry? same-history-entry?
           empty-state state state?
           make-state
           state=? state-facts state-subst state-hist
