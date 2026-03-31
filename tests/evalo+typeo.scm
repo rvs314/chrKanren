@@ -10,14 +10,14 @@
 
 (define-relation (evalo env exp val)
   (conde
-   [(numbero exp) (=== val exp)]
+   [(numbero exp) (== val exp)]
    [(symbolo exp) (lookupo exp env val)]
    [(fresh (x b)
-      (=== exp `(λ (,x) ,b))
+      (== exp `(λ (,x) ,b))
       (symbolo x)
-      (=== val `(clos ,env ,x ,b)))]
+      (== val `(clos ,env ,x ,b)))]
    [(fresh (op e_arg clos x body v_arg)
-      (=== exp `(,op ,e_arg))
+      (== exp `(,op ,e_arg))
       (evalo env op `(clos ,clos ,x ,body))
       (evalo env e_arg v_arg)
       (evalo (cons (cons x v_arg) clos) body val))]))
@@ -75,3 +75,29 @@
     (ground symbol? sym)
     <=>
     (lookupo sym nv typ)))
+
+(define-constraint (eval^o env exp val))
+
+(define-rules
+  (forall (exp env val)
+    (forget (eval^o env exp val)) (ground number? exp) <=> (== exp val))
+  (forall (env val nm body)
+    (forget (eval^o env `(λ (,nm) ,body) val))
+    <=>
+    (symbolo nm)
+    (== val `(clos ,env ,nm ,body)))
+  (forall (op arg env val)
+    (forget (eval^o env `(,op ,arg) val))
+    <=>
+    (fresh (env^ nm body argval)
+      (eval^o env   op `(clos ,env^ ,nm ,body))
+      (eval^o env  arg argval)
+      (eval^o (cons (cons nm argval) env^) body val)))
+  (forall (exp env val)
+    (forget (eval^o env exp val))
+    (ground symbol? exp)
+    <=>
+    (lookupo exp env val)))
+
+(define M `(λ (x) (x x)))
+(define Ω `(,M ,M))
