@@ -34,7 +34,7 @@
   (forall (obj)
     (forget (symbolo obj))
     (ground (negate symbol?) obj)
-    <=>
+    =>
     fail))
 
 (define-test symbolo-test
@@ -52,7 +52,7 @@
   (forall (obj)
     (forget (symbolo obj))
     (forget (numbero obj))
-    <=>
+    =>
     fail)
   (forall (obj)
     (forget (numbero obj))
@@ -60,7 +60,7 @@
   (forall (obj)
     (forget (numbero obj))
     (ground (negate number?) obj)
-    <=>
+    =>
     fail))
 
 (define-test numbero-test

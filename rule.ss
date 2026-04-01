@@ -3,10 +3,10 @@
 (library (chrKanren rule)
   (export define-rules
           *constraint-handling-rules*
-          forall <=>
+          forall
           witness witness? make-witness kept-witness removed-witness
           witness-kept? witness-removed? witness-constraint
-          rule rule? rule-prereqs rule-consequences
+          rule rule? rule-id rule-prereqs rule-consequences
           rule-free-variables rule-free?
           parse-rule keep forget
           scheme ground)
@@ -17,8 +17,17 @@
           (chrKanren vars)
           (chrKanren goals))
 
+  (define *rule-counter* 0)
+
   (define-record-type rule
-    (fields free-variables prereqs consequences))
+    (fields id free-variables prereqs consequences)
+    (protocol
+     (lambda (new)
+       (define (make-rule free-variables prereqs consequences)
+         (let ([id *rule-counter*])
+           (set! *rule-counter* (+ *rule-counter* 1))
+           (new id free-variables prereqs consequences)))
+       make-rule)))
 
   (define-check (rule-free? [rule rule?] var)
     any?
@@ -28,7 +37,6 @@
   (define *constraint-handling-rules* (make-parameter '()))
 
   (define-syntax forall (syntax-rules ()))
-  (define-syntax <=> (syntax-rules ()))
   (define-syntax keep (syntax-rules ()))
   (define-syntax forget (syntax-rules ()))
 
@@ -50,10 +58,10 @@
     (make-witness #f constraint))
 
   (define-syntax parse-rule
-    (syntax-rules (keep forget forall <=>)
+    (syntax-rules (keep forget forall =>)
       [(parse-rule (vs ...) (gl ...) ())
-       (parse-rule (vs ...) (gl ...) (<=> succeed))]
-      [(parse-rule (vs ...) (gl ...) (<=> res ...))
+       (parse-rule (vs ...) (gl ...) (=> succeed))]
+      [(parse-rule (vs ...) (gl ...) (=> res ...))
        (fresh (vs ...)
          (make-rule
           (list vs ...)

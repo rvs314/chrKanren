@@ -13,12 +13,12 @@
   (forall (x y)
     (forget (<=o x y))
     (forget (<=o y x))
-    <=>
+    =>
     (=== x y))
   (forall (x y z)
     (<=o x y)
     (<=o y z)
-    <=>
+    =>
     (<=o x z)))
 
 (define-test thoms-test

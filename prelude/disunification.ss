@@ -47,63 +47,63 @@
   (define-rules
     (forall (x y)
       (forget (=/= x y))
-      <=>
+      =>
       (=/=* (list (cons x y))))
     (forall ()
       (=/=* (list))
-      <=>
+      =>
       fail)
     (forall (l ls)
       (forget (=/=* (cons (cons l l) ls)))
-      <=>
+      =>
       (=/=* ls))
     (forall (l r rs)
       (forget (=/=* (cons (cons l r) rs)))
       (ground atom? l)
       (ground (negate equal?) l r)
-      <=>
+      =>
       succeed)
     (forall (l r rs)
       (forget (=/=* (cons (cons l r) rs)))
       (ground atom? r)
       (ground (negate equal?) l r)
-      <=>
+      =>
       succeed)
     (forall (l r rst n p pr)
       (typeo l n p pr)
       (forget (=/=* (cons (cons l r) rst)))
       (ground (lambda (p r) (not (p r))) p r)
-      <=>
+      =>
       succeed)
     (forall (l r rst n p pr)
       (typeo r n p pr)
       (forget (=/=* (cons (cons l r) rst)))
       (ground (lambda (p l) (not (p l))) p l)
-      <=>
+      =>
       succeed)
     (forall (l r n n^ p p^ rs pr pr^)
       (forget (=/=* (cons (cons l r) rs)))
       (typeo l n p pr)
       (typeo r n^ p^ pr^)
       (ground (negate eq?) n n^)
-      <=>
+      =>
       succeed)
     (forall (ll lr rl rr rs)
       (forget (=/=* (cons (cons (cons ll lr) (cons rl rr)) rs)))
-      <=>
+      =>
       (=/=* (cons* (cons ll rl) (cons lr rr) rs)))
     (forall (ls rs vs)
       (reifying vs)
       (=/=* ls)
       (forget (=/=* rs))
       (ground subsumes? ls rs)
-      <=>
+      =>
       succeed)
     (forall (ls vs)
       (reifying vs)
       (forget (=/=* ls))
       (ground reducible? ls)
-      <=>
+      =>
       (or (false-map =/=* (reduced ls))
           succeed))
     (forall (ls vs)

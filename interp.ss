@@ -115,8 +115,7 @@
     procedure?
     (define-check (seen-before? [witnesses (listof constraint?)])
       (disjoin* not history-entry?)
-      (define new-fact (cons rule witnesses))
-      (find (cut same-history-entry? <> new-fact) (state-hist state)))
+      (state-seen-application? state rule witnesses))
     seen-before?)
 
   (define-check (apply-rule [rule rule?] [state state?])

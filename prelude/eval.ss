@@ -65,32 +65,32 @@
     (forall (nb nv rs)
       (eval^o nb nv rs)
       (ground number? nb)
-      <=>
+      =>
       (== nb rs))
     (forall (nb nv rs)
       (eval^o nb nv rs)
       (numbero nb)
-      <=>
+      =>
       (== nb rs))
     (forall (vl nv rs)
       (eval^o `(quote ,vl) nv rs)
-      <=>
+      =>
       (== vl rs))
     (forall (ar dr nv rs)
       (eval^o `(cons ,ar ,dr) nv rs)
-      <=>
+      =>
       (fresh (h t)
         (== rs (cons h t))
         (eval^o ar nv h)
         (eval^o dr nv t)))
     (forall (arglist nv body rs)
       (eval^o `(lambda ,arglist ,body) nv rs)
-      <=>
+      =>
       (listo arglist)
       (== rs `(closure ,arglist ,body ,nv)))
     (forall (rator rands nv rs)
       (eval^o `(,rator . ,rands) nv rs)
-      <=>
+      =>
       (listo rands)
       (fresh (arglist body env env^)
         (eval^o rator nv `(closure ,arglist ,body ,env))
@@ -99,10 +99,10 @@
     (forall (nm nv rv)
       (eval^o nm nv rv)
       (symbolo nm)
-      <=>
+      =>
       (lookupo nm nv rv))
     (forall (nm nv rv)
       (eval^o nm nv rv)
       (ground symbol? nm)
-      <=>
+      =>
       (lookupo nm nv rv))))

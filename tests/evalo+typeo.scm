@@ -42,16 +42,16 @@
   (forall (nv n ty)
     (forget (type^o nv n ty))
     (numbero n)
-    <=>
+    =>
     (== ty 'number))
   (forall (nv n ty)
     (forget (type^o nv n ty))
     (ground number? n)
-    <=>
+    =>
     (== ty 'number))
   (forall (nv rator arglist body ty rst)
     (forget (type^o nv `(,rator ,arglist ,body . ,rst) ty))
-    <=>
+    =>
     (== rst '())
     (fresh (x i o)
       (== rator 'λ)
@@ -61,34 +61,34 @@
       (type^o (cons (cons x i) nv) body o)))
   (forall (nv rator rand typ)
     (forget (type^o nv `(,rator ,rand) typ))
-    <=>
+    =>
     (fresh (t_input)
       (type^o nv rator `(-> ,t_input ,typ))
       (type^o nv rand t_input)))
   (forall (nv sym typ)
     (symbolo sym)
     (forget (type^o nv sym typ))
-    <=>
+    =>
     (lookupo sym nv typ))
   (forall (nv sym typ)
     (forget (type^o nv sym typ))
     (ground symbol? sym)
-    <=>
+    =>
     (lookupo sym nv typ)))
 
 (define-constraint (eval^o env exp val))
 
 (define-rules
   (forall (exp env val)
-    (forget (eval^o env exp val)) (ground number? exp) <=> (== exp val))
+    (forget (eval^o env exp val)) (ground number? exp) => (== exp val))
   (forall (env val nm body)
     (forget (eval^o env `(λ (,nm) ,body) val))
-    <=>
+    =>
     (symbolo nm)
     (== val `(clos ,env ,nm ,body)))
   (forall (op arg env val)
     (forget (eval^o env `(,op ,arg) val))
-    <=>
+    =>
     (fresh (env^ nm body argval)
       (eval^o env   op `(clos ,env^ ,nm ,body))
       (eval^o env  arg argval)
@@ -96,7 +96,7 @@
   (forall (exp env val)
     (forget (eval^o env exp val))
     (ground symbol? exp)
-    <=>
+    =>
     (lookupo exp env val)))
 
 (define M `(λ (x) (x x)))

@@ -15,7 +15,7 @@ This declares the ~symbolo~ functor, which holds if the object constrained is a 
     [forall (x) (symbolo x) (ground symbol? x) <=> succeed])
 #+end_src
 
-These read: "for any values ~x~, if there is a constraint in the store such that ~x~ must be symbol, then (respectively), if it is a ground non-symbol, fail; if it is a ground symbol, succeed". The ~<=>~ symbol denotes that the constraints on the left-hand-side not only imply those on the right, they are equivalent to those on the right, and so those on the left need not stay in the constraint store.
+These read: "for any values ~x~, if there is a constraint in the store such that ~x~ must be symbol, then (respectively), if it is a ground non-symbol, fail; if it is a ground symbol, succeed".
 
 In general the syntax of both forms is as follows:
 

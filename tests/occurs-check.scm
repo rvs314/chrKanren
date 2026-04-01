@@ -31,23 +31,23 @@ Boxes are just single slots which do not follow the occurs-check.
 (define-rules
   (forall (x y)
     (forget (== (box x) (box y)))
-    <=>
+    =>
     (== x y))
   (forall (x y)
     (forget (== (box x) y))
     (ground (negate box?) y)
-    <=>
+    =>
     fail)
   (forall (x y)
     (== x (box y))
     (ground (negate box?) x)
-    <=>
+    =>
     fail)
 
   ;; Ignore all occurs-check tests
   (forall (x y rs z)
     (forget (occurs-checko x (cons (box y) rs) z))
-    <=>
+    =>
     (occurs-checko x rs z)))
 
 (define-test simple-unifications

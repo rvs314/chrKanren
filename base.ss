@@ -2,7 +2,7 @@
 
 (library (chrKanren base)
   (export define-relation define-constraint
-          define-rules <=> forall ground
+          define-rules => forall ground
           fresh === == conj disj
           conde succeed fail
           run run* forget keep

@@ -1,7 +1,7 @@
 #!r6rs
 
 (library (chrKanren state)
-  (export history-entry? same-history-entry?
+  (export history-entry?
           empty-state state state?
           make-state
           state=? state-facts state-subst state-hist
@@ -20,10 +20,12 @@
           (chrKanren streams)
           (chrKanren unify)
           (chrKanren vars)
-          (chrKanren varmap))
+          (chrKanren varmap)
+          (chrKanren intmaps))
 
-  (define history-entry?
-    (pairof rule? (listof constraint?)))
+  (define history-entry? (listof constraint?))
+
+  (define hist? (disjoin* null? pair? vector?))
 
   (define-record-type state
     (fields subst facts hist)
@@ -32,7 +34,7 @@
        (define-check
          (make-state [subst varmap?]
                      [facts (listof constraint?)]
-                     [hist  (listof history-entry?)])
+                     [hist  hist?])
 
          state?
          (new subst facts hist))
@@ -71,17 +73,18 @@
   (define state-with-facts (state-map->state-with state-map-facts))
   (define state-with-hist  (state-map->state-with state-map-hist))
 
-  (define (same-history-entry? o1 o2)
-    (and (= (length o1) (length o2))
-         (for-all eq? o1 o2)))
+  (define (same-history-entry? cs1 cs2)
+    (and (= (length cs1) (length cs2))
+         (for-all eq? cs1 cs2)))
 
   (define-check (state-seen-application? [state state?]
                                          [rule rule?]
                                          [constraints (listof constraint?)])
     any?
     (and (pair? constraints)
-         (find (cut same-history-entry? <> (cons rule constraints))
-               (state-hist state))))
+         (let ([entries (intmap-ref (state-hist state) (rule-id rule))])
+           (and (not (not-found? entries))
+                (find (cut same-history-entry? <> constraints) entries)))))
 
   (define (state-record-application state rule witnesses)
     (define (constraint-to-be-removed witness)
@@ -96,8 +99,10 @@
      (lambda (subst facts hist)
        (define facts^
          (lset-difference eq? facts constraints-to-be-removed))
+       (define existing (intmap-ref hist (rule-id rule)))
+       (define existing^ (if (not-found? existing) '() existing))
        (define hist^
-         (cons (cons rule constraints) hist))
+         (intmap-set hist (rule-id rule) (cons constraints existing^)))
        (values subst facts^ hist^))
      state))
 

@@ -57,14 +57,14 @@
       (forget (%applyo x y))
       (ground list? y)
       (ground procedure? x)
-      <=>
+      =>
       (apply x y))
     (forall (x y)
       (forget (== x y))
       (ground procedure? x)
       (ground procedure? y)
       (ground (negate eq?) x y)
-      <=>
+      =>
       fail))
 
   (define-rules
@@ -75,12 +75,12 @@
       (forget (typeo o n p pr))
       (ground procedure? pr)
       (ground proccall p o)
-      <=>
+      =>
       (callo pr o))
     (forall (o n p pr)
       (forget (typeo o n p pr))
       (ground (negate proccall) p o)
-      <=>
+      =>
       fail)
     (forall (o n p pr)
       (typeo o n p pr)
@@ -89,7 +89,7 @@
       (forget (typeo o n p pr))
       (forget (typeo o n^ p^ pr^))
       (ground (negate eq?) n n^)
-      <=>
+      =>
       fail)
     (forall (o n p vs pr)
       (reifying vs)

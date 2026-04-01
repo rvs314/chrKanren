@@ -96,17 +96,17 @@
   (define-rules
     (forall (r)
       (forget (ino r set-nil))
-      <=>
+      =>
       fail)
     (forall (r s t)
       (forget (ino r (set-cons s t)))
-      <=>
+      =>
       (seto t)
       (disj (== r s) (ino r t)))
     (forall (t X)
       (forget (ino t X))
       (scheme var? X)
-      <=>
+      =>
       (seto X)
       (fresh (N)
         (== X (set-cons t N)))))
@@ -114,35 +114,26 @@
   (define parallel-sets? (on eq? set-tail))
 
   (define-rules
-    (forall (t)
-      (forget (== t set-nil))
-      <=>
-      (=== t set-nil))
-    (forall (t)
-      (forget (== set-nil t))
-      <=>
-      (=== set-nil t))
+    (forall (t) (forget (== t set-nil)) => (=== t set-nil))
+    (forall (t) (forget (== set-nil t)) => (=== set-nil t))
     (forall (t s p)
       (forget (== p (set-cons t s)))
       (ground (negate set-pair?) p)
-      <=>
-      fail)
+      => fail)
     (forall (t s p)
       (forget (== (set-cons t s) p))
       (ground (negate set-pair?) p)
-      <=>
-      fail)
+      => fail)
     (forall (t s t^ s^)
       (forget (== (set-cons t s) (set-cons t^ s^)))
-      (scheme (negate parallel-sets?) s s^)
-      <=>
+      (scheme (negate (on eq? set-tail)) s s^)
+      =>
       (seto s)
       (seto s^)
       (conde
-       [(== t t^)
-        (disj (== (set-cons t s) s^)
-              (== s s^)
-              (== s (set-cons t^ s^)))]
+       [(== t t^) (disj (== (set-cons t s) s^)
+                        (== s s^)
+                        (== s (set-cons t^ s^)))]
        [(fresh (N)
           (seto N)
           (== s (set-cons t^ N))
@@ -150,7 +141,7 @@
     (forall (t s t^ s^)
       (forget (== (set-cons t s) (set-cons t^ s^)))
       (scheme parallel-sets? s s^)
-      <=>
+      =>
       (parallel-sets-== (cons t (set-head s))
                         (cons t^ (set-head s^))
                         (set-tail s))))
@@ -163,43 +154,31 @@
                     [(t^j-1..0 t^j t^j+1..n) (apply values zp)])
          (conde
           [(== t0 t^j)
-           (parallel-sets-==
-            t1..m
-            (append t^j-1..0 t^j+1..n)
-            X)]
+           (parallel-sets-== t1..m (append t^j-1..0 t^j+1..n) X)]
           [(== t0 t^j)
-           (parallel-sets-==
-            (cons t0 t1..m)
-            (append t^j-1..0 t^j+1..n)
-            X)]
+           (parallel-sets-== (cons t0 t1..m) (append t^j-1..0 t^j+1..n) X)]
           [(== t0 t^j)
-           (parallel-sets-==
-            t1..m
-            (append t^j-1..0 (list t^j) t^j+1..n)
-            X)]
+           (parallel-sets-== t1..m (append t^j-1..0 (list t^j) t^j+1..n) X)]
           [(fresh (N)
              (seto N)
              (set-conso t0 N X)
-             (parallel-sets-==
-              t1..m
-              (append t^j-1..0 (list t^j) t^j+1..n)
-              N))])))
+             (parallel-sets-== t1..m (append t^j-1..0 (list t^j) t^j+1..n) N))])))
      (zippers ts^)))
 
   (define-rules
     (forall (x rs z)
       (forget (occurs-checko x (cons set-nil rs) z))
-      <=>
+      =>
       (occurs-checko x rs z))
     (forall (x t rs z)
       (forget (occurs-checko x (cons (set-cons x t) rs) z))
-      <=>
+      =>
       fail)
     (forall (x rs z)
       (forget (occurs-checko x rs z))
       (ground set-pair? z)
       (scheme (lambda (x z) (eq? x (set-tail z))) x z)
-      <=>
+      =>
       (fresh (N)
         (seto N)
         (occurs-checko x (set-head z) (make-set (set-head z) N))))
@@ -208,7 +187,7 @@
       (scheme (negate set-pair?) z)
       (scheme (negate eq?) x h)
       (scheme (negate eq?) x t)
-      <=>
+      =>
       (occurs-checko x (cons* h t rs) z))
     (forall (x h t rs z)
       (forget (occurs-checko x (cons (set-cons h t) rs) z))
@@ -216,5 +195,5 @@
       (scheme (lambda (x z) ((negate eq?) x (set-tail z))) x z)
       (scheme (negate eq?) x h)
       (scheme (negate eq?) x t)
-      <=>
+      =>
       (occurs-checko x (cons* h t rs) z))))

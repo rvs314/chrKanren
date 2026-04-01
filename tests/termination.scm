@@ -9,7 +9,7 @@
 (define-rules
   (forall (x)
      (forget (loop^o x))
-     <=>
+     =>
      (loop^o x)))
 
 (define-relation (loopo x)

@@ -28,7 +28,7 @@
   (define-rules
     (forall (x)
       (absento x x)
-      <=>
+      =>
       fail)
     (forall (x y)
       (absento x y)
@@ -36,16 +36,16 @@
     (forall (x y)
       (forget (absento x y))
       (ground atom? y)
-      <=>
+      =>
       (=/= x y))
     (forall (x y n p)
       (forget (absento x y))
       (typeo y n p #f)
-      <=>
+      =>
       (=/= x y))
     (forall (x y z)
       (forget (absento x (cons y z)))
-      <=>
+      =>
       (=/= x (cons y z))
       (absento x y)
       (absento x z))
