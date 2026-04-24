@@ -82,7 +82,7 @@
         (check-call ...)
         (body ...))
        (if-debugging
-        (named-lambda name args
+        (named-lambda (name . args)
           check-call ...
           (check (procedure? result?) '(result contract of name))
           (let-values ([(rs) result?]
@@ -90,7 +90,7 @@
                        [results (let () body ...)])
             (check (apply result? results) '(return value of name))
             (apply values results)))
-        (named-lambda name args
+        (named-lambda (name . args)
           body ...))]
       [(named-lambda-check-helper
         (name argname ...)
@@ -136,7 +136,7 @@
 
       ))
 
-  (define-syntax-rule (named-lambda-check name (arg ...)
+  (define-syntax-rule (named-lambda-check (name arg ...)
                         result?
                         b body ...)
     (named-lambda-check-helper (name)
@@ -148,11 +148,11 @@
   (define-syntax-rule (lambda-check (arg ...)
                         result?
                         b body ...)
-    (named-lambda-check anonymous-lambda (arg ...)
-      result?
+    (named-lambda-check (anon arg ...)
+        result?
       b body ...))
 
   (define-syntax-rule (define-check (name arg ...) result? b body ...)
-    (define name (named-lambda-check name (arg ...)
-                   result?
+    (define name (named-lambda-check (name arg ...)
+                     result?
                    b body ...) )))

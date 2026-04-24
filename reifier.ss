@@ -14,7 +14,6 @@
           (chrKanren goals)
           (chrKanren check)
           (chrKanren unify)
-          (chrKanren varmap)
           (chrKanren vars)
           (chrKanren utils)
           (chrKanren state))

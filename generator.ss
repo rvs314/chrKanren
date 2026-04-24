@@ -11,7 +11,6 @@
           (chrKanren streams)
           (chrKanren check)
           (chrKanren vars)
-          (chrKanren varmap)
           (chrKanren state)
           (only (srfi :1 lists)
                 filter-map make-list list-tabulate append-map)
@@ -132,7 +131,11 @@
     (eta (induction-generator
           (const empty-stream)
           (random-proc
-           (compose make-solution    (broadcast state-generator stream-generator))
-           (compose make-bind        (broadcast stream-generator goal-generator))
-           (compose make-choice      (broadcast stream-generator stream-generator))
-           (compose make-paused-step (broadcast state-generator goal-generator)))))))
+           (compose make-solution
+                    (broadcast state-generator stream-generator))
+           (compose make-bind
+                    (broadcast stream-generator goal-generator))
+           (compose make-choice
+                    (broadcast stream-generator stream-generator))
+           (compose make-paused-step
+                    (broadcast state-generator goal-generator)))))))

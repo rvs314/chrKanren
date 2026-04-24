@@ -5,6 +5,7 @@
    goal goal? goal=?
 
    define-constraint
+   constraint-id
    constraint make-constraint constraint?
    constraint-constructor constraint-reifier constraint-operands
 
@@ -18,12 +19,13 @@
    fail         failure     failure?
    succeed      success     success?
 
-   posting post posting? posting-constraint
+   posting posting-id post posting? posting-constraint
 
    Zzz delay delay? delay-cont)
 
   (import (rnrs)
           (only (srfi :1) reduce-right)
+          (srfi :39 parameters)
           (chrKanren check)
           (chrKanren utils))
 
@@ -71,7 +73,14 @@
   (define-record-type (posting post posting?)
     (parent goal)
     (sealed #t)
-    (fields constraint))
+    (fields id constraint)
+    (protocol
+     (let ([counter 0])
+       (lambda (new)
+         (lambda-check ([con constraint?])
+           posting?
+           (set! counter (+ 1 counter))
+           ((new) counter con))))))
 
   (define-record-type delay
     (parent goal)
@@ -79,10 +88,21 @@
     (fields cont))
 
   (define-syntax-rule (Zzz body ...)
-    (make-delay (named-lambda delayed () body ...)))
+    (make-delay (named-lambda (delayed) body ...)))
 
   (define-record-type constraint
-    (fields constructor reifier operands))
+    (fields id constructor reifier operands)
+    (protocol
+     (let ([counter 0])
+       (lambda (new)
+         (named-lambda-check
+             (make-constraint
+              [con procedure?]
+              [ref procedure?]
+              [ops any?])
+           constraint?
+           (set! counter (+ 1 counter))
+           (new counter con ref ops))))))
 
   (define-syntax dotted-list-helper
     (syntax-rules ()

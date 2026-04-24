@@ -13,7 +13,6 @@
           (chrKanren rule)
           (chrKanren utils)
           (chrKanren vars)
-          (chrKanren varmap)
           (chrKanren goals)
           (chrKanren streams)
           (chrKanren relation)

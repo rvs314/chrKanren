@@ -3,8 +3,7 @@
 (import (rnrs)
         (chrKanren test)
         (chrKanren check)
-        (chrKanren vars)
-        (chrKanren varmap))
+        (chrKanren vars))
 
 (define a (make-var 'a))
 (define b (make-var 'b))

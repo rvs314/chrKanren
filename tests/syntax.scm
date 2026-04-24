@@ -63,8 +63,7 @@
            [r-r (unification-rhs right)]
            [_ (check (var? l-l))]
            [_ (check (var? r-l))]
-           [_ (lset= = (map var-idx (list l-l r-l))
-                       (list 0 1))]
+           [_ (check (not (eq? l-l r-l)))]
            [_ (check (eqv? l-r 1))]
            [_ (check (eqv? r-r 2))])
       'passed)))

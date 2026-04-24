@@ -24,12 +24,19 @@
 
 (define-test test-var-counter
   (*var-counter* 0)
-  (check (eqv? (var-idx (make-var 'the-var-counter)) 0))
+  (check (var? (make-var 'the-var-counter)))
   (check (eqv? (*var-counter*) 1))
 
   (parameterize ([*var-counter* 0])
-    (check (eqv? (var-idx (make-var 'foo)) 0))
-    (check (eqv? (var-idx (make-var 'bar)) 1))
-    (check (eqv? (var-idx (make-var 'baz)) 2)))
+    (let ([foo (make-var 'foo)]
+          [bar (make-var 'bar)]
+          [baz (make-var 'baz)])
+      (check (var? foo))
+      (check (var? bar))
+      (check (var? baz))
+      (check (not (eq? foo bar)))
+      (check (not (eq? foo baz)))
+      (check (not (eq? bar baz)))
+      (check (eqv? (*var-counter*) 3))))
 
   (check (eqv? (*var-counter*) 1)))

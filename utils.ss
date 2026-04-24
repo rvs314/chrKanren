@@ -3,13 +3,12 @@
 (library (chrKanren utils)
   (export define-syntax-rule
           TODO
-          atom? any?
+          natural? atom? any? none?
           eta
           *puts-output-port* puts
           car+cdr find-and-remove ref-and-remove
           compose const const* broadcast
           conjoin conjoin* disjoin disjoin* negate on
-          natural?
           and-proc or-proc
           sort merge make-tree=?
           repeatedly
@@ -21,20 +20,21 @@
           fixpoint
           begin0
           all-distinct?
-          treeof pairof listof arguments
+          treeof pairof listof vectorof arguments
           tuple->pair pair->tuple
-          symbol
+          symbol identifier
           group-by
           singleton? single-out
           find-subtree
           false-map
           vector-set vector-update
-          vector-exists vector-fold
+          vector-for-all vector-exists vector-fold
           snoc rdc rac rdc+rac
           proccall
           zippers
           copy-object replace-in-object!
-          named-lambda)
+          named-lambda
+          predicate-implies?)
   (import (rnrs)
           (rnrs mutable-pairs)
           (srfi :39 parameters)
@@ -42,16 +42,23 @@
           (only (srfi :1 lists)
                 split-at take reduce car+cdr last drop-right))
 
+  (define-syntax define-syntax-rule
+    (syntax-rules ()
+      [(define-syntax-rule (name . args)
+         body ...)
+       (define-syntax name
+         (syntax-rules ()
+           [(name . args)
+            (begin body ...)]))]))
+
   (define (and-proc . objs)
     (reduce (lambda (x y) (and x y)) #t objs))
 
   (define (or-proc . objs)
     (reduce (lambda (x y) (or x y)) #f objs))
 
-  (define-syntax conjoin*
-    (syntax-rules ()
-      [(conjoin* fn ...)
-       (lambda (x) (and (fn x) ...))]))
+  (define-syntax-rule (conjoin* fn ...)
+    (lambda (x) (and (fn x) ...)))
 
   (define (conjoin . fns)
     (lambda xs
@@ -71,14 +78,12 @@
 
   (define negate (cut compose not <>))
 
-  (define-syntax disjoin*
-    (syntax-rules ()
-      [(disjoin* fn ...)
-       (lambda (x) (or (fn x) ...))]))
-
   (define (disjoin . fns)
     (lambda xs
       (exists (cut apply <> xs) fns)))
+
+  (define-syntax-rule (disjoin* fn ...)
+    (lambda (x) (or (fn x) ...)))
 
   (define natural? (conjoin exact? (negate negative?) integer?))
 
@@ -92,19 +97,11 @@
       [(const* x) (lambda _ x)]))
 
   (define any? (const #t))
+  (define none? (const #f))
 
   (define (on combine . projs)
     (lambda xs
       (apply combine (map (apply compose projs) xs))))
-
-  (define-syntax define-syntax-rule
-    (syntax-rules ()
-      [(define-syntax-rule (name . args)
-         body ...)
-       (define-syntax name
-         (syntax-rules ()
-           [(name . args)
-            (begin body ...)]))]))
 
   (define-syntax-rule (eta proc)
     (lambda arglist
@@ -268,6 +265,11 @@
       (and (list? x)
            (for-all elem? x))))
 
+  (define (vectorof elem?)
+    (lambda (x)
+      (and (vector? x)
+           (vector-for-all elem? x))))
+
   (define (arguments . tests)
     (lambda args
       (and (equal? (length args) (length tests))
@@ -285,7 +287,6 @@
     (disjoin* null? number? string? char?
               boolean? symbol? bytevector?
               procedure?))
-
 
   (define (fixpoint step finished? start0 . start)
     (let-values ([next (apply step start0 start)])
@@ -309,9 +310,24 @@
   (define (symbol . objs)
     (string->symbol (apply string-append (map show objs))))
 
+  (define (identifier . objs)
+    (define id0 (find identifier? objs))
+    (unless id0
+      (assertion-violation
+       'identifier "At least one argument must be an identifier" objs))
+    (datum->syntax id0
+                   (apply symbol
+                          (map (lambda (obj)
+                                 (if (identifier? obj)
+                                     (syntax->datum obj)
+                                     obj))
+                               objs))))
+
   (define (hashtable->alist ht)
     (unless (hashtable? ht)
-      (error 'hashtable->alist "hashtable->alist argument must be a hashtable" ht))
+      (error 'hashtable->alist
+             "hashtable->alist argument must be a hashtable"
+             ht))
     (let-values ([(v1 v2) (hashtable-entries ht)])
       (map cons (vector->list v1) (vector->list v2))))
 
@@ -366,6 +382,12 @@
   (define (vector-update vec key fn)
     (vector-set vec key (fn (vector-ref vec key))))
 
+  (define (vector-for-all pred vec)
+    (let loop ([i 0])
+      (and (< i (vector-length vec))
+           (and (pred (vector-ref vec i))
+                (loop (+ 1 i))))))
+
   (define (vector-exists pred vec)
     (let loop ([i 0])
       (and (< i (vector-length vec))
@@ -417,7 +439,7 @@
            (loop (+ i 1))))])
     obj)
 
-  (define-syntax-rule (named-lambda name arglist body ...)
+  (define-syntax-rule (named-lambda (name . arglist) body ...)
     (letrec ([name (lambda arglist body ...)])
       name))
 
@@ -425,4 +447,9 @@
     (or (null? objs)
         (and (pair? objs)
              (not (memv (car objs) (cdr objs)))
-             (all-distinct? (cdr objs))))))
+             (all-distinct? (cdr objs)))))
+
+  (define (predicate-implies? p1 p2)
+    (or (eq? p1 p2)
+        (eq? p2 any?)
+        (eq? p1 none?))))

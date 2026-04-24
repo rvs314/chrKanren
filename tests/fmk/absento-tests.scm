@@ -307,8 +307,8 @@
 ;; is outsourced to CHR, so I'm ignoring it for the time being.
 ;; The results are still sound, they just occasionally post some
 ;; trivially true constaints.
+#;
 (define-test test-45b
-  (test-count 0)
   (check (equal?
           (run* (q)
             (fresh (a b)

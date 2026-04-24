@@ -2,22 +2,23 @@
 
 (library (chrKanren vars)
   (export *var-counter*
-          var var-name make-var var? var-idx
+          var var-name make-var var?
           free-variables
-          fresh var<=?)
-
+          fresh var<=?
+          varmap? empty-varmap
+          varmap-lookup varmap-extend
+          alist->varmap varmap->alist
+          varmap-copy)
   (import (rnrs)
           (chrKanren utils)
           (chrKanren goals)
+          (chrKanren check)
+          (chrKanren hashmap)
           (srfi :39 parameters))
 
-  (define (assert-natural x)
-    (if (and (integer? x) (not (negative? x)))
-        x
-        (assertion-violation '*var-counter*
-                             "counter must be a natural number"
-                             x)))
-
+  (define-check (assert-natural [x natural?])
+    natural?
+    x)
 
   (define *var-counter* (make-parameter 0 assert-natural))
 
@@ -47,5 +48,16 @@
       [(vector? obj) (free-variables (vector->list obj))]
       [else '()]))
 
+  (define var<=? (on <= var-idx))
 
-  (define var<=? (on <= var-idx)))
+  (define-hashmap-type varmap var? any? var-idx)
+
+ (define-check (varmap-lookup [key var?] [vmap varmap?])
+    any?
+    (hashmap-ref vmap key (lambda () key)))
+
+ (define alist? (listof (pairof var? any?)))
+
+  (define-check (varmap-extend [key var?] [value any?] [vmap varmap?])
+    varmap?
+    (hashmap-set vmap key value)))

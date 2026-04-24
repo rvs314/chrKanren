@@ -5,7 +5,7 @@
         (chrKanren test)
         (chrKanren check)
         (chrKanren vars)
-        (chrKanren varmap)
+        (chrKanren hashmap)
         (chrKanren unify)
         (srfi :39 parameters))
 

@@ -7,7 +7,6 @@
           (except (srfi :1 lists) for-each assoc map fold-right member find filter partition remove car+cdr)
           (chrKanren utils)
           (chrKanren check)
-          (chrKanren varmap)
           (chrKanren vars)
           (srfi :26 cut))
 
@@ -17,8 +16,9 @@
       (case-lambda
         [(obj vm) (name obj vm var?)]
         [(obj vm metavar?)
-         ((named-lambda-check name
-              (obj [vm varmap?] [var? procedure?])
+         ((named-lambda-check (name obj
+                                    [vm varmap?]
+                                    [var? procedure?])
             any?
             body ...)
           obj vm metavar?)])))
@@ -141,7 +141,7 @@
        (cond
          [(eq? lhs rhs) vm]
          [(and (var? lhs) (var? rhs))
-          (if (> (var-idx lhs) (var-idx rhs))
+          (if (var<=? rhs lhs)
               (extend lhs rhs vm)
               (extend rhs lhs vm))]
          [(var? lhs) (extend lhs rhs vm)]

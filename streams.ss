@@ -82,7 +82,7 @@
     (fields stream)
     (protocol
      (lambda (new)
-       (named-lambda-check make-propagating ([strm stream?])
+       (named-lambda-check (make-propagating [strm stream?])
          stream?
          (if (empty? strm)
              strm

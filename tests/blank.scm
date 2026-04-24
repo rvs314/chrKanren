@@ -12,7 +12,6 @@
         (chrKanren interp)
         (chrKanren unify)
         (chrKanren rule)
-        (chrKanren varmap)
         (chrKanren prelude disunification)
         (chrKanren goals)
         (prefix (srfi :41 streams) s:)

@@ -7,7 +7,6 @@
           (chrKanren goals)
           (chrKanren compare)
           (chrKanren vars)
-          (chrKanren varmap)
           (chrKanren utils)
           (chrKanren unify)
           (chrKanren prelude unification)

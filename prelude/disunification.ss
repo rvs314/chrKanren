@@ -10,7 +10,6 @@
           (chrKanren vars)
           (chrKanren goals)
           (chrKanren unify)
-          (chrKanren varmap)
           (srfi :2 and-let*)
           (chrKanren compare)
           (chrKanren rule)

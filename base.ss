@@ -10,7 +10,6 @@
           =/= symbolo numbero stringo absento)
   (import (rnrs)
           (chrKanren vars)
-          (chrKanren varmap)
           (chrKanren utils)
           (chrKanren syntax)
           (chrKanren goals)

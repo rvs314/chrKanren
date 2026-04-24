@@ -13,8 +13,13 @@ FAILURES=0
 
 for f in $TEST_FILES; do
     echo "> $SCHEME_CMD $f $@"
-    $SCHEME_CMD $f $@
-    FAILURES=$(($FAILURES + $?))
+    DEBUG=OFF $SCHEME_CMD $f $@
+    RETCODE=$?
+    if [ $RETCODE -ne 0 ]; then
+        echo "Test failed! Rerunning in debug mode"
+        $SCHEME_CMD $f $@
+    fi
+    FAILURES=$(($FAILURES + $RETCODE))
 done
 
 END=`date "+%s%3N"`
