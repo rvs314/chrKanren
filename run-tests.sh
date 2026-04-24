@@ -17,7 +17,7 @@ for f in $TEST_FILES; do
     RETCODE=$?
     if [ $RETCODE -ne 0 ]; then
         echo "Test failed! Rerunning in debug mode"
-        $SCHEME_CMD $f $@
+        DEBUG=ON $SCHEME_CMD $f $@
     fi
     FAILURES=$(($FAILURES + $RETCODE))
 done
@@ -27,9 +27,12 @@ END=`date "+%s%3N"`
 if [ $FAILURES -eq 0 ]; then
     DURATION="$(($END-$START))"
     echo "Tests passed in $DURATION milliseconds"
-    if [ "$DEBUG" = "OFF" ]; then
-        echo "$(git show | head -n1) $DURATION" >> perf.txt
+    COMMIT_HASH="$(git rev-parse HEAD)"
+    if [ -f perf.txt ]; then
+        grep -v "^commit $COMMIT_HASH " perf.txt > perf.txt.tmp
+        mv perf.txt.tmp perf.txt
     fi
+    echo "commit $COMMIT_HASH $DURATION" >> perf.txt
 else
     echo "Some Tests Failed!"
 fi
