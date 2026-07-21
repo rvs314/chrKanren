@@ -1,5 +1,9 @@
 #+title: chrKanren
 
+#+begin_quote
+This work was recently presented at the International Conference on Logic Programming (ICLP 2026). See [[https://dx.doi.org/10.4204/EPTCS.450.30][the paper which presented it]].
+#+end_quote
+
 This is chrKanren, an implementation of miniKanren with support for the Constraint Handling Rules (CHR) language for defining constraints. It is currently a work in progress! The primary goals of this implementation are (in order of priority): Extensibility, User Experience, Performance, Novelty, and Simplicity of Implementation.
 
 The implementation will be written in /pure, standards-abiding/ R6RS scheme. This means most of the code in the project is within R6RS libraries. The primary targets are racket and chez scheme, which run such programs, but other R6RS schemes should be able to run it without issue. In order to avoid re-inventing the wheel, chrKanren uses a number of [[https://srfi.schemers.org/][SRFIs]] (generally, ones which do not change reader syntax or heavily effect program behavior).
